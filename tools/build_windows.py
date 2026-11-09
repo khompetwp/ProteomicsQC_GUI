@@ -13,6 +13,8 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from proteomicsqc import __version__ as VERSION
 
 
 def build(destination):
@@ -71,7 +73,7 @@ def refresh_app(destination):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, default=ROOT / "dist" / "ProteomicsQC_0.3.0")
+    parser.add_argument("--output", type=Path, default=ROOT / "dist" / ("ProteomicsQC_" + VERSION))
     parser.add_argument("--refresh-app", action="store_true", help="Refresh code/docs in an existing development build; dependencies unchanged")
     args = parser.parse_args()
     print(refresh_app(args.output) if args.refresh_app else build(args.output), flush=True)

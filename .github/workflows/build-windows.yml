@@ -30,7 +30,7 @@ jobs:
           .\.venv\Scripts\python.exe tools/build_windows.py
           .\.venv\Scripts\python.exe tools/verify_portable.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Compress-Archive -LiteralPath dist/ProteomicsQC_0.3.0 -DestinationPath dist/ProteomicsQC_0.3.0_Portable_x64.zip
+          Compress-Archive -LiteralPath dist/ProteomicsQC_0.3.0-preview.2 -DestinationPath dist/ProteomicsQC_0.3.0-preview.2_Portable_x64.zip
       - name: Build installer if Inno Setup is available
         shell: pwsh
         run: |

@@ -8,10 +8,13 @@ import shutil
 import subprocess
 import tempfile
 import time
+import sys
 
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from proteomicsqc import __version__ as VERSION
 
 
 def run(portable, fragpipe=None):
@@ -30,13 +33,18 @@ def run(portable, fragpipe=None):
     assert Path(diagnostics["prefix"]).resolve() == private_root.resolve()
     for package in diagnostics["packages"].values():
         assert private_root.resolve() in Path(package["path"]).resolve().parents, package
-    cases = [("DIA-NN", portable / "Examples" / "SYNTHETIC_ONLY" / "diann_2_2_0" / "report.parquet"),
-             ("MaxQuant", portable / "Examples" / "SYNTHETIC_ONLY" / "maxquant_unspecified")]
+    cases = [("DIA-NN", "DIA-NN", portable / "Examples" / "SYNTHETIC_ONLY" / "diann_2_2_0" / "report.parquet"),
+             ("MaxQuant", "MaxQuant", portable / "Examples" / "SYNTHETIC_ONLY" / "maxquant_unspecified")]
     if fragpipe:
-        cases.append(("FragPipe", fragpipe))
+        cases.append(("FragPipe", "FragPipe", fragpipe))
+    unicode_input = output / "ทดสอบ QC"
+    unicode_input.mkdir()
+    unicode_report = unicode_input / "report DIA 2.2.parquet"
+    shutil.copyfile(cases[0][2], unicode_report)
+    cases.append(("DIA-NN-พาธไทย", "DIA-NN", unicode_report))
     results = []
-    for source, path in cases:
-        target = output / source
+    for label, source, path in cases:
+        target = output / label
         digest = hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
         command = [str(launcher), "--cli", "--source", source, "--input", str(path), "--output", str(target)]
         started = time.monotonic()
@@ -51,11 +59,11 @@ def run(portable, fragpipe=None):
         assert sorted(path.name for path in folder.iterdir()) == ["QC_summary.xlsx", "_support", "multiqc_report.html"]
         if digest:
             assert hashlib.sha256(path.read_bytes()).hexdigest() == digest
-        results.append({"source": source, "status": "complete", "plot_count": history["pmultiqc_plot_count"],
+        results.append({"source": source, "case": label, "status": "complete", "plot_count": history["pmultiqc_plot_count"],
                         "seconds": round(time.monotonic() - started, 1), "result_directory": str(folder)})
     # Cancel while the HTML phase is starting, and require a persisted cancellation status.
     target = output / "cancel"
-    child = subprocess.Popen([str(launcher), "--cli", "--source", "DIA-NN", "--input", str(cases[0][1]), "--output", str(target)], env=environment)
+    child = subprocess.Popen([str(launcher), "--cli", "--source", "DIA-NN", "--input", str(cases[0][2]), "--output", str(target)], env=environment)
     deadline = time.monotonic() + 45
     directory = None
     while child.poll() is None and time.monotonic() < deadline:
@@ -77,7 +85,7 @@ def run(portable, fragpipe=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--portable", type=Path, default=ROOT / "dist" / "ProteomicsQC_0.3.0")
+    parser.add_argument("--portable", type=Path, default=ROOT / "dist" / ("ProteomicsQC_" + VERSION))
     parser.add_argument("--fragpipe", type=Path)
     args = parser.parse_args()
     run(args.portable.resolve(), args.fragpipe.resolve() if args.fragpipe else None)

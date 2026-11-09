@@ -2,7 +2,7 @@
 
 Windows desktop QC for FragPipe, DIA-NN and MaxQuant, with compact Excel summaries and optional PMultiQC HTML reports.
 
-รุ่น 0.3.0 สำหรับ Windows 10/11 x64 — โปรแกรมสรุป QC ของตารางผลวิเคราะห์ ไม่ประมวลผล RAW เพื่อค้นหา peptide/protein เอง
+รุ่น 0.3.0-preview.2 สำหรับ Windows 10/11 x64 — โปรแกรมสรุป QC ของตารางผลวิเคราะห์ ไม่ประมวลผล RAW เพื่อค้นหา peptide/protein เอง
 
 ## ใช้ชุด portable โดยไม่ติดตั้ง
 
@@ -118,3 +118,7 @@ builder คัดลอก private CPython/Tcl/Tk และ site-packages จา
 ข้อมูลทดลองและผล QC ไม่ต้องอัปโหลด GitHub; .gitignore ข้ามข้อมูลและ build outputs
 
 หลังแพ็กแล้วพัฒนาต่อได้: แก้ source → ทดสอบ → build portable/Setup รุ่นใหม่ ไม่แก้ .exe โดยตรง
+
+## Preview 2
+
+Report workers explicitly use UTF-8 so Thai paths and custom report filenames can be validated correctly on Thai Windows locales.

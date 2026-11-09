@@ -45,7 +45,7 @@ def run_pmultiqc(source, files, outdir, excluded, data_source, info, check_cance
             "pmultiqc/diann_report_tsv": {"fn": selected.name if selected.suffix.lower() == ".tsv" else "__no_tsv_selected__", "num_lines": 0},
         }
         folder = selected.parent
-    command = [sys.executable, "-u", str(Path(__file__).with_name("multiqc_runner.py")), PLUGIN_FLAGS[data_source], str(folder),
+    command = [sys.executable, "-X", "utf8", "-u", str(Path(__file__).with_name("multiqc_runner.py")), PLUGIN_FLAGS[data_source], str(folder),
                "-o", str(outdir), "--filename", "multiqc_report.html", "--no-version-check", "--cl-config", json.dumps(config)]
     ignored = set(excluded)
     for current, dirs, _ in os.walk(folder):
