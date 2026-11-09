@@ -1,0 +1,6 @@
+# Direct dependency versions from the environment used for integration testing.
+# Use Python 3.13 on Windows. Create a new virtual environment on each computer.
+pandas==3.1.1
+openpyxl==3.1.5
+pmultiqc==0.0.48
+multiqc==1.35

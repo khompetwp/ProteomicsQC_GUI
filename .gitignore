@@ -1,0 +1,35 @@
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local settings and credentials
+.env
+.env.*
+.vscode/
+.idea/
+
+# Experimental inputs and generated results
+data/
+results/
+ResultQC/
+qc_*/
+gui_*/
+_support/
+*.tsv
+*.csv
+*.xlsx
+*.raw
+*.mzML
+*.mzXML
+*.log
+multiqc_report*.html
+
+# Local backups and future build output
+.backup/
+*.zip
+msqc_gui.before_*.py
+build/
+dist/
