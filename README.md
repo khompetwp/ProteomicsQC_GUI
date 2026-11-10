@@ -2,7 +2,18 @@
 
 Windows desktop QC for FragPipe, DIA-NN and MaxQuant, with compact Excel summaries and optional PMultiQC HTML reports.
 
-รุ่น 0.3.0-preview.3 สำหรับ Windows 10/11 x64 — โปรแกรมสรุป QC ของตารางผลวิเคราะห์ ไม่ประมวลผล RAW เพื่อค้นหา peptide/protein เอง
+รุ่น 0.4.0 สำหรับ Windows 10/11 x64 — โปรแกรมสรุป QC ของตารางผลวิเคราะห์ ไม่ประมวลผล RAW เพื่อค้นหา peptide/protein เอง
+
+## สิ่งใหม่ใน 0.4.0
+
+- GUI แบบตั้งค่าด้านบนและตารางเต็มความกว้าง ใช้ ttkbootstrap และโลโก้ Q ชมพู–ฟ้า
+- **Output folder** พร้อมแสดงตำแหน่งรายงานที่จะสร้างจริง
+- **Create PMultiQC HTML report** เปิดเป็นค่าเริ่มต้น; FragPipe Peptide/Protein รองรับ Excel เท่านั้น
+- ตรวจหัวคอลัมน์แบบไม่อ่านข้อมูลทั้งไฟล์ก่อนรัน ข้อความผ่านการตรวจหัวตารางไม่ใช่การผ่านเกณฑ์คุณภาพทางวิทยาศาสตร์
+- ตาราง Summary อ่านง่ายขึ้นและแสดงตัวอย่าง By run 6 run แรก ใช้ค่าจริงจาก workbook โดยไม่เปลี่ยนวิธีนับ
+- Help / About เปิดคู่มือ PDF ที่รวมในโปรแกรม; แท็บ Log มีปุ่ม Copy log / error
+- จำโฟลเดอร์ล่าสุดไว้ใน `%LOCALAPPDATA%\ProteomicsQC\settings.json` เพียงไฟล์เดียว ไม่เก็บเนื้อหา input และไม่จำการปิด HTML ข้ามการเปิดโปรแกรม
+- อัปเกรดโดยปิดโปรแกรมแล้วรัน Setup ใหม่ในตำแหน่งเดิม ไม่ต้องถอนรุ่นเดิม ผล QC ควรเก็บนอกโฟลเดอร์ติดตั้ง
 
 ## ใช้ชุด portable โดยไม่ติดตั้ง
 
@@ -12,7 +23,7 @@ Windows desktop QC for FragPipe, DIA-NN and MaxQuant, with compact Excel summari
 
 หากใช้ Setup.exe จะติดตั้งสำหรับผู้ใช้ปัจจุบัน สร้างรายการ Start menu และเลือกสร้าง desktop shortcut ได้
 ถอนการติดตั้งได้ผ่าน Windows Apps โปรแกรมไม่ลบข้อมูลทดลองหรือรายงานที่บันทึกไว้นอกโฟลเดอร์โปรแกรม
-ตัวติดตั้งและ EXE รุ่นทดสอบยังไม่ได้เซ็นดิจิทัล
+ตัวติดตั้งและ EXE ยังไม่ได้เซ็นดิจิทัล จึงอาจแสดง Unknown publisher
 
 ## วิธีใช้งาน
 

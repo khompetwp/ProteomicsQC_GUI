@@ -10,7 +10,7 @@ def main():
     result = {"python": sys.version.split()[0], "executable": sys.executable,
               "prefix": sys.prefix, "packages": {}, "gui_created": False}
     try:
-        for name in ("pandas", "openpyxl", "pyarrow", "pmultiqc", "multiqc"):
+        for name in ("pandas", "openpyxl", "pyarrow", "pmultiqc", "multiqc", "ttkbootstrap"):
             module = import_module(name)
             result["packages"][name] = {"version": version(name), "path": str(module.__file__)}
         from .gui import MSQCApp

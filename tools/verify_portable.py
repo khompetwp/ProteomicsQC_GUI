@@ -19,6 +19,7 @@ from proteomicsqc import __version__ as VERSION
 
 def run(portable, fragpipe=None):
     launcher = portable / "ProteomicsQC.exe"
+    assert (portable / "_internal" / "app" / "docs" / "ProteomicsQC_User_Manual_TH_0.4.0.pdf").is_file(), "Bundled manual missing"
     output_root = ROOT / "build" / "portable_validation"
     output_root.mkdir(parents=True, exist_ok=True)
     output = Path(tempfile.mkdtemp(prefix="portable_validation_", dir=output_root))

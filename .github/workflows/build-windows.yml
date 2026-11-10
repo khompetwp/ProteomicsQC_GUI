@@ -26,11 +26,17 @@ jobs:
           .\.venv\Scripts\python.exe -m unittest discover -s tests -v
       - name: Build and test portable EXE
         shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
+          New-Item -ItemType Directory -Path output/pdf -Force | Out-Null
+          gh release download v0.4.0 --pattern ProteomicsQC_User_Manual_TH_0.4.0.pdf --dir output/pdf
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           .\.venv\Scripts\python.exe tools/build_windows.py
           .\.venv\Scripts\python.exe tools/verify_portable.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Compress-Archive -LiteralPath dist/ProteomicsQC_0.3.0-preview.3 -DestinationPath dist/ProteomicsQC_0.3.0-preview.3_Portable_x64.zip
+          Compress-Archive -LiteralPath dist/ProteomicsQC_0.4.0 -DestinationPath dist/ProteomicsQC_0.4.0_Portable_x64.zip
       - name: Build installer if Inno Setup is available
         shell: pwsh
         run: |

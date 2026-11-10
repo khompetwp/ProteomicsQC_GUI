@@ -2,6 +2,7 @@ import contextlib
 import hashlib
 import importlib.util
 import io
+import os
 import json
 from pathlib import Path
 import sys
@@ -21,6 +22,8 @@ from proteomicsqc.reporting import validate_report
 from proteomicsqc.runtime import Cancelled
 from proteomicsqc.tables import save_workbook
 from proteomicsqc.outputs import create_run_directory, validate_report_name
+from proteomicsqc.preflight import check_input
+from proteomicsqc.preferences import load_settings, save_settings
 
 FIXTURES = ROOT / "sample_data" / "synthetic_qc"
 
@@ -36,6 +39,8 @@ class CoreTests(unittest.TestCase):
         temporary_root.mkdir(parents=True, exist_ok=True)
         self.temp = tempfile.TemporaryDirectory(dir=temporary_root)
         self.root = Path(self.temp.name)
+        self.settings_patch = patch.dict(os.environ, {"PROTEOMICSQC_SETTINGS": str(self.root / "settings.json")})
+        self.settings_patch.start()
         self.psm = self.root / "psm.tsv"
         pd.DataFrame({"Peptide": ["NA", " PEP ", "PEP", ""], "Charge": ["2", "3", "bad", "inf"],
                       "Spectrum File": ["one", "one", "two", "two"],
@@ -43,7 +48,38 @@ class CoreTests(unittest.TestCase):
                       "Calculated M/Z": [500, 500, 500, 0]}).to_csv(self.psm, sep="\t", index=False)
 
     def tearDown(self):
+        self.settings_patch.stop()
         self.temp.cleanup()
+
+    def test_header_preflight_sources_and_wrong_schema(self):
+        self.assertEqual(check_input(self.psm, "FragPipe", "PSM")[0], [self.psm])
+        self.assertTrue(check_input(self.psm, "FragPipe", "PSM", html=True)[1])
+        with self.assertRaisesRegex(ValueError, "missing required columns"):
+            check_input(self.psm, "DIA-NN", "Precursor")
+        check_input(FIXTURES / "diann_2_2_0" / "report.parquet", "DIA-NN", "Precursor")
+        check_input(FIXTURES / "maxquant_unspecified", "MaxQuant", "Evidence")
+
+    def test_preferences_one_file_and_html_default(self):
+        save_settings({"input_folder": "D:/ข้อมูล", "output_folder": "D:/QC", "secret": "must not persist"})
+        self.assertNotIn("secret", load_settings())
+        app = MSQCApp()
+        app.withdraw()
+        try:
+            self.assertTrue(app.multiqc_var.get())
+            self.assertEqual(app.output_var.get(), "D:/QC")
+            app.level_var.set("Peptide")
+            self.assertFalse(app.multiqc_var.get())
+            self.assertEqual(str(app.multiqc_check.cget("state")), "disabled")
+            app.level_var.set("PSM")
+            self.assertTrue(app.multiqc_var.get())
+            app.multiqc_var.set(False)
+            app._html_changed()
+            app.source_var.set("DIA-NN")
+            self.assertFalse(app.multiqc_var.get())
+            app.source_var.set("MaxQuant")
+            self.assertEqual(app.level_var.get(), "Evidence")
+        finally:
+            app.destroy()
 
     def analyze(self, source, data_source="FragPipe", level="PSM", html=False, directory="output"):
         outdir = self.root / directory
@@ -106,6 +142,7 @@ class CoreTests(unittest.TestCase):
     def test_gui_custom_input_named_folder_and_existing_result(self):
         app = MSQCApp()
         app.withdraw()
+        app.multiqc_var.set(False)
         custom = self.root / "psm_2.tsv"
         custom.write_bytes(self.psm.read_bytes())
         try:

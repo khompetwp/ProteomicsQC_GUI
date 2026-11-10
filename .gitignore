@@ -35,3 +35,5 @@ msqc_gui.before_*.py
 build/
 dist/
 sample_data/
+tmp/
+output/

@@ -17,6 +17,14 @@ sys.path.insert(0, str(ROOT))
 from proteomicsqc import __version__ as VERSION
 
 
+def copy_manual(application):
+    manual = ROOT / "output" / "pdf" / "ProteomicsQC_User_Manual_TH_0.4.0.pdf"
+    if manual.is_file():
+        destination = application / "docs"
+        destination.mkdir(exist_ok=True)
+        shutil.copy2(manual, destination / manual.name)
+
+
 def build(destination):
     destination = destination.resolve()
     if destination.exists():
@@ -40,6 +48,7 @@ def build(destination):
     shutil.copytree(ROOT / "proteomicsqc", application / "proteomicsqc", ignore=shutil.ignore_patterns("__pycache__"))
     for name in ("msqc_gui.py", "msqc2.py"):
         shutil.copy2(ROOT / name, application / name)
+    copy_manual(application)
     shutil.copy2(ROOT / "README.md", destination / "README.md")
     shutil.copytree(ROOT / "sample_data" / "synthetic_qc", destination / "Examples" / "SYNTHETIC_ONLY")
     compiler = Path(r"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe")
@@ -67,6 +76,7 @@ def refresh_app(destination):
     shutil.copytree(ROOT / "proteomicsqc", application / "proteomicsqc", dirs_exist_ok=True, ignore=shutil.ignore_patterns("__pycache__"))
     for name in ("msqc_gui.py", "msqc2.py"):
         shutil.copy2(ROOT / name, application / name)
+    copy_manual(application)
     shutil.copy2(ROOT / "README.md", destination / "README.md")
     return destination
 
