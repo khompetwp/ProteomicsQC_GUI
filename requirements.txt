@@ -2,5 +2,7 @@
 # Use Python 3.13 on Windows. Create a new virtual environment on each computer.
 pandas==3.1.1
 openpyxl==3.1.5
+pyarrow==26.0.1
 pmultiqc==0.0.48
 multiqc==1.35
+ttkbootstrap==2.2.7

@@ -1,29 +1,88 @@
 # ProteomicsQC GUI
 
-Python desktop application for quality control of FragPipe TSV results, featuring per-run QC metrics,
-Excel summaries with analysis history, and optional PMultiQC HTML reports.
+Windows desktop QC for FragPipe, DIA-NN and MaxQuant, with compact Excel summaries and optional PMultiQC HTML reports.
 
-โปรแกรมเดสก์ท็อปสำหรับสรุป QC ของตาราง FragPipe รุ่น 0.2.0
+รุ่น 0.4.0 สำหรับ Windows 10/11 x64 — โปรแกรมสรุป QC ของตารางผลวิเคราะห์ ไม่ประมวลผล RAW เพื่อค้นหา peptide/protein เอง
 
-## ดาวน์โหลดจาก GitHub
+## สิ่งใหม่ใน 0.4.0
 
-เปิด [ProteomicsQC_GUI](https://github.com/khompetsh2-cloud/ProteomicsQC_GUI) แล้วเลือก **Code → Download ZIP** และแตกไฟล์
-หาก repository เป็น Private ต้องเข้าสู่ระบบด้วยบัญชีที่มีสิทธิ์เข้าถึงก่อน
+- GUI แบบตั้งค่าด้านบนและตารางเต็มความกว้าง ใช้ ttkbootstrap และโลโก้ Q ชมพู–ฟ้า
+- **Output folder** พร้อมแสดงตำแหน่งรายงานที่จะสร้างจริง
+- **Create PMultiQC HTML report** เปิดเป็นค่าเริ่มต้น; FragPipe Peptide/Protein รองรับ Excel เท่านั้น
+- ตรวจหัวคอลัมน์แบบไม่อ่านข้อมูลทั้งไฟล์ก่อนรัน ข้อความผ่านการตรวจหัวตารางไม่ใช่การผ่านเกณฑ์คุณภาพทางวิทยาศาสตร์
+- ตาราง Summary อ่านง่ายขึ้นและแสดงตัวอย่าง By run 6 run แรก ใช้ค่าจริงจาก workbook โดยไม่เปลี่ยนวิธีนับ
+- Help / About เปิดคู่มือ PDF ที่รวมในโปรแกรม; แท็บ Log มีปุ่ม Copy log / error
+- จำโฟลเดอร์ล่าสุดไว้ใน `%LOCALAPPDATA%\ProteomicsQC\settings.json` เพียงไฟล์เดียว ไม่เก็บเนื้อหา input และไม่จำการปิด HTML ข้ามการเปิดโปรแกรม
+- อัปเกรดโดยปิดโปรแกรมแล้วรัน Setup ใหม่ในตำแหน่งเดิม ไม่ต้องถอนรุ่นเดิม ผล QC ควรเก็บนอกโฟลเดอร์ติดตั้ง
 
-หรือใช้ Git:
+## ใช้ชุด portable โดยไม่ติดตั้ง
 
-```powershell
-git clone https://github.com/khompetsh2-cloud/ProteomicsQC_GUI.git
-cd ProteomicsQC_GUI
+แตก ZIP ทั้งหมด แล้วเปิด `ProteomicsQC.exe` โดยเก็บ `_internal` ไว้ข้างกัน ไม่ต้องติดตั้ง Python หรือแก้ PATH
+มี private Python 3.13 และ dependencies ของโปรแกรมรวมอยู่แล้ว ตัว launcher ใช้ .NET Framework 4.x ของ Windows
+ตัวอย่างใน `Examples/SYNTHETIC_ONLY` เป็นข้อมูลจำลองเท่านั้น
+
+หากใช้ Setup.exe จะติดตั้งสำหรับผู้ใช้ปัจจุบัน สร้างรายการ Start menu และเลือกสร้าง desktop shortcut ได้
+ถอนการติดตั้งได้ผ่าน Windows Apps โปรแกรมไม่ลบข้อมูลทดลองหรือรายงานที่บันทึกไว้นอกโฟลเดอร์โปรแกรม
+ตัวติดตั้งและ EXE ยังไม่ได้เซ็นดิจิทัล จึงอาจแสดง Unknown publisher
+
+## วิธีใช้งาน
+
+1. เลือก **Data source** ให้ตรงกับโปรแกรมต้นทาง
+2. เลือกไฟล์หรือโฟลเดอร์ผลวิเคราะห์ และ Data level
+3. เลือก Output parent folder ที่เขียนได้; ปล่อยว่างใช้ ResultQC ใกล้ input แล้วตั้ง Report folder name ได้ เช่น `HeLa QC รอบสอง`; เว้นชื่อว่างใช้ชื่ออัตโนมัติ ชื่อซ้ำจะแจ้งเตือนโดยไม่เขียนทับ
+4. ติ๊กสร้าง HTML หากต้องการ แล้วกด Run QC
+5. เปิด Excel/HTML จากปุ่มในโปรแกรม หรือกด Cancel เพื่อขอยกเลิก
+
+| Data source | Input | หน่วยที่โปรแกรมนับ |
+|---|---|---|
+| FragPipe | เลือก PSM TSV ชื่อใดก็ได้ เช่น psm_2.tsv; เลือกโฟลเดอร์จะค้นหา psm*.tsv; peptide/protein TSV ทีละไฟล์ | PSM / peptide / protein identifiers ตามโหมด |
+| DIA-NN | main report .parquet หรือ .tsv; เริ่มพัฒนาจากคอลัมน์ 2.2.0 | precursor observations ต่อ run, unique precursors, peptide sequences, protein-group strings |
+| MaxQuant | โฟลเดอร์ txt หรือโฟลเดอร์ที่มี txt; ต้องมี evidence.txt, msms.txt, proteinGroups.txt | evidence features, MS/MS PSM rows และ protein-group rows แยกกัน |
+
+MaxQuant จะอ่าน summary.txt, parameters.txt และ msmsScans.txt เพิ่มเมื่อมี
+DIA-NN ต้องเป็น main report ไม่ใช่ pg_matrix, spectral library หรือ site report; หากมีหลาย main report ให้เลือกไฟล์โดยตรง
+เวอร์ชัน MaxQuant เป้าหมายยังไม่ทราบ ต้องยืนยันอีกครั้งกับไฟล์จริง
+
+## ผลลัพธ์ต่อรอบ
+
+```text
+qc_วันเวลา_รหัส/
+  QC_summary.xlsx
+  multiqc_report.html     เมื่อเลือกสร้างและรายงานสำเร็จ
+  _support/               ข้อมูลประกอบ PMultiQC รวม mzQC เมื่อ plugin สร้าง
+  processing.log          เมื่อมีปัญหา รายงานไม่ครบ หรือยกเลิก
 ```
 
-Repository เก็บโค้ดและคู่มือ ส่วนข้อมูลทดลองและผลลัพธ์เก็บไว้ในเครื่องที่ใช้งาน
-ไฟล์ `.gitignore` ข้ามข้อมูลทดลอง ผลลัพธ์ สภาพแวดล้อม Python และไฟล์สำรอง
+Excel มี Summary, By run, Numeric audit, Missing values, Input files และ Run info
+รวมประวัติ เวลา เวอร์ชัน dependencies ขอบเขต input คำสั่งที่ใช้ และสถานะใน Run info
+GUI แสดง 1,000 แถวแรกต่อแท็บ แต่ Excel เก็บตารางสรุปทั้งหมด
+จำนวน unique ต่อ run/ไฟล์ไม่ควรนำมาบวกแล้วเรียกว่า unique ของทั้งงาน
 
-## ติดตั้งบนคอม Windows เครื่องอื่น
+## ไม่มีการกรองเพิ่มเติมของโปรแกรม
 
-นำ `msqc_gui.py`, `msqc2.py`, `requirements.txt` และคู่มือนี้ไปไว้ในโฟลเดอร์เดียวกัน
-ติดตั้ง Python 3.13 พร้อม Tcl/Tk แล้วเปิด PowerShell ในโฟลเดอร์โปรแกรม:
+โปรแกรมไม่เขียนทับ input ไม่กรอง q-value/FDR ไม่ตัด decoy/contaminant ไม่ลบแถวซ้ำ ไม่เติมค่าว่าง และไม่ renormalise
+ข้อความ NA เป็นข้อความตามเดิม; ช่องว่างถือเป็น missing; ค่าตัวเลขผิดรูปแบบ/infinity ไม่ใช้ในสถิติตัวเลขแต่ยังนับแถวนั้น
+ไฟล์ต้นทางอาจผ่านการกรองหรือ normalization มาแล้วตามการตั้งค่าของ FragPipe/DIA-NN/MaxQuant
+ไม่มีการตัดสิน PASS/FAIL อัตโนมัติ
+
+**PMultiQC มีวิธีคำนวณและการกรองภายในของมันเอง** เช่น ตัด decoy/reverse และแยก transferred evidence ตามกราฟ
+จึงอาจมีตัวเลขต่างจาก Excel ซึ่งนับทุกแถวของ input โปรแกรมตรวจว่ารายงานมี plot data และตรวจข้อความ plugin ล้มเหลว
+หากสร้าง HTML ได้แต่บางส่วนอ่านไม่สำเร็จจะรายงาน partial; ควรตรวจ Log ก่อนนำรายงานไปใช้
+
+FragPipe PMultiQC ใช้ PSM ชุดเดียวกับที่เลือก/ค้นพบสำหรับ Excel QC โดยส่ง path ต้นฉบับให้ worker รองรับชื่อไฟล์กำหนดเอง ไม่เปลี่ยนชื่อหรือคัดลอกข้อมูล ส่วนไฟล์ประกอบ เช่น combined_protein.tsv ยังสแกนจากโฟลเดอร์ input
+DIA-NN ใช้ main report ที่เลือก ส่วน log/metadata อาจอ่านจากโฟลเดอร์เดียวกัน
+MaxQuant ใช้โฟลเดอร์ที่มีชุดตารางที่ตรวจพบ
+โฟลเดอร์ผลของโปรแกรมและ _support จะถูกข้ามในการสแกน
+
+### ความเข้ากันได้ PMultiQC 0.0.48
+
+worker มี compatibility shim เฉพาะเวอร์ชันนี้: แปลงคอลัมน์ข้อความ DIA-NN ที่เก็บแบบ categorical และ MaxQuant Protein group IDs แบบตัวเลขเป็นชนิดข้อความในหน่วยความจำ
+เพื่อหลีกเลี่ยงข้อผิดพลาดของ plugin ไม่มีการแก้ไฟล์แพ็กเกจ ไม่มีการเปลี่ยนค่า input และไม่เพิ่มตัวกรอง
+เมื่ออัปเกรด PMultiQC ต้องทดสอบใหม่ shim ไม่ทำงานกับเวอร์ชันอื่น
+
+## ติดตั้งจาก source เพื่อพัฒนา
+
+ดาวน์โหลด repository ทั้งชุด ไม่ใช่เฉพาะไฟล์ .py สองไฟล์ ใช้ Python 3.13 x64 พร้อม Tcl/Tk
 
 ```powershell
 py -3.13 -m venv .venv
@@ -31,98 +90,47 @@ py -3.13 -m venv .venv
 .\.venv\Scripts\python.exe msqc_gui.py
 ```
 
-ครั้งถัดไปเปิดด้วยคำสั่งสุดท้ายได้เลย ไม่ต้องติดตั้งใหม่ทุกรอบ
-
-สร้าง `.venv` ใหม่ในเครื่องปลายทาง ไม่ต้องคัดลอก `.venv` จากเครื่องเดิม
-ติดตั้งครั้งแรกต้องเข้าถึงแหล่งแพ็กเกจ Python ที่องค์กรอนุญาต
-`requirements.txt` ระบุเวอร์ชัน dependencies หลักที่ใช้ทดสอบ ไม่ใช่ lockfile ของ dependencies ทุกตัว
-ไม่ต้องมี Microsoft Excel เพื่อสร้างไฟล์; เปิดผลได้ด้วยโปรแกรมที่รองรับ `.xlsx`
-
-## วิธีใช้งาน
-
-1. เลือกไฟล์ `psm.tsv` หรือโฟลเดอร์เพื่อค้นหา `psm.tsv` ในโฟลเดอร์ย่อย (โหมด PSM)
-2. สำหรับ Peptide/Protein ให้เลือก TSV ทีละไฟล์และเลือก Data level ให้ตรง
-3. เลือกโฟลเดอร์ผลลัพธ์ที่เขียนได้; ปล่อยว่างจะใช้ `ResultQC` ใกล้ input
-4. ติ๊ก Create PMultiQC HTML report หากต้องการ HTML (PSM เท่านั้น)
-5. กด Run QC แล้วเปิด Excel หรือ HTML จากปุ่มในโปรแกรม
-
-แต่ละรอบสร้างโฟลเดอร์ใหม่ `qc_YYYYMMDD_HHMMSS_...` ชั้นเดียว:
-
-```text
-qc_.../
-  QC_summary.xlsx
-  multiqc_report.html     เมื่อขอสร้าง HTML และสร้างสำเร็จ
-  _support/               ข้อมูลประกอบของ PMultiQC เมื่อสร้างรายงาน
-  processing.log          เฉพาะเมื่อ QC หรือการสร้าง HTML มีปัญหา
-```
-
-ไม่สร้าง CSV และ JSON แยกตามตารางอีกแล้ว ไฟล์ผลเก่าจะไม่ถูกลบหรือแปลงอัตโนมัติ
-เก็บ `_support` ไว้คู่กับรายงาน โดยเฉพาะเมื่อต้องย้ายทั้งชุดผลลัพธ์
-
-## สิ่งที่อยู่ใน Excel
-
-- Summary: ผลสรุปต่อไฟล์
-- By run: ผลสรุปต่อ Spectrum File; ถ้าไม่มีคอลัมน์นี้ใช้ชื่อโฟลเดอร์แทน
-- Numeric audit: ค่าตัวเลขที่ถูกต้อง ขาดหาย หรือผิดรูปแบบ
-- Missing values: ค่าว่างต่อคอลัมน์
-- Input files: รายชื่อ input ขนาดไฟล์ เวลาแก้ไข และระบุว่าใช้คำนวณ QC หรืออยู่ในขอบเขตสแกน PMultiQC
-- Run info: เวลาเริ่ม/จบ สถานะ เวอร์ชัน Python/แพ็กเกจ การตั้งค่า และคำสั่ง PMultiQC
-
-แท็บที่ไม่เกี่ยวกับโหมดที่เลือกจะว่าง ตารางใน GUI แสดงได้ไม่เกิน 1,000 แถวต่อแท็บ แต่ Excel เก็บผลสรุปทั้งหมด
-จำนวน peptide ที่ไม่ซ้ำเป็นค่าต่อไฟล์/ต่อ run; ไม่ควรนำมาบวกแล้วเรียกว่า unique peptide รวมทุกไฟล์
-
-## ขอบเขตข้อมูลและการประมวลผล
-
-GUI QC ไม่เขียนทับไฟล์ต้นฉบับ ไม่กรอง FDR ไม่ตัด decoy/contaminant ไม่ลบแถวซ้ำ และไม่เติมค่าว่าง
-อ่านทุกค่าเป็นข้อความ ตัดช่องว่างหัวท้าย และนับข้อความว่างเป็นข้อมูลขาด โดยเก็บ `NA` เป็นข้อความตามเดิมทุกโหมด
-การคำนวณตัวเลขไม่นำค่าที่แปลงไม่ได้หรือ infinity มาคำนวณ แต่ยังนับแถวนั้นในจำนวนแถวทั้งหมด
-Mass error ใช้คู่ m/z ที่เป็นตัวเลขจำกัดและมากกว่าศูนย์ แล้วคำนวณ `1e6 * (observed - calculated) / calculated`
-
-PMultiQC อ่านไฟล์ต้นฉบับทั้งโฟลเดอร์ที่เลือก; ถ้าเลือกไฟล์เดียวจะอ่านทั้งโฟลเดอร์ที่ไฟล์นั้นอยู่
-จึงอาจเห็นไฟล์มากกว่าส่วน QC ของ GUI และใช้กฎการอ่าน/คำนวณของ PMultiQC เอง
-รายชื่อใน Input files เป็นรายการไฟล์ในขอบเขตที่สแกน ไม่ได้ยืนยันว่า PMultiQC อ่านทุกไฟล์นั้นจริง
-โปรแกรมข้ามโฟลเดอร์ผลลัพธ์ของรอบนี้ และโฟลเดอร์ผลของโปรแกรมรุ่นนี้ที่ตรวจพบ เพื่อหลีกเลี่ยงการอ่านรายงานเก่าซ้ำ
-เก็บข้อมูล input ให้คงที่ระหว่างรัน; ประวัติเก็บ path/size/mtime โดยไม่ได้ทำสำเนาหรือ checksum ของข้อมูล
-ปิดการตรวจเวอร์ชันออนไลน์และการสรุปด้วย AI ในคำสั่ง PMultiQC ของโปรแกรม
-
-ถ้า HTML สร้างไม่สำเร็จ ผล QC ใน Excel ยังอยู่ และ Run info จะแสดงสถานะ partial พร้อมรายละเอียดใน processing.log
-หาก input ผิดรูปแบบ สถานะจะเป็น failed; อย่าใช้แถวว่างใน Excel เป็นผลว่าไม่พบ PSM
-Excel เป็นผลสรุป ไม่ได้คัดลอก PSM ทั้งหมดเข้าไป
-
-## ข้อจำกัดและการทดสอบก่อนใช้ประจำ
-
-ยังอ่าน TSV ทีละไฟล์ทั้งไฟล์เข้า RAM และไม่มีปุ่มยกเลิกงาน จึงควรทดสอบขนาดข้อมูลจริงกับเครื่องทำงาน
-ควรเลือกโฟลเดอร์ input เฉพาะชุดทดลองเพื่อให้ขอบเขต PMultiQC ชัดเจน
-โปรแกรมไม่ได้ประเมิน QC ของเครื่อง MS จาก RAW และไม่ได้ตัดสินผ่าน/ไม่ผ่านอัตโนมัติ
-ตัว GUI ใช้การเปิดโฟลเดอร์/Excel ของ Windows; หากจะใช้ระบบอื่นต้องปรับส่วนนี้
-
-## เรียกผ่านคำสั่ง
+สร้าง venv ใหม่บนแต่ละเครื่อง requirements.txt pin dependencies หลัก ส่วน portable มีรายการเวอร์ชันทั้งหมดใน _internal/environment.json
 
 ```powershell
-.\.venv\Scripts\python.exe msqc2.py --input data --output results --skip-multiqc
-.\.venv\Scripts\python.exe msqc2.py --input data --output results
-.\.venv\Scripts\python.exe msqc2.py --input peptide.tsv --level Peptide --output results --skip-multiqc
+.\.venv\Scripts\python.exe msqc2.py --source FragPipe --input data --output results
+.\.venv\Scripts\python.exe msqc2.py --source FragPipe --input psm_2.tsv --output results --report-name "HeLa QC รอบสอง"
+.\.venv\Scripts\python.exe msqc2.py --source DIA-NN --input report.parquet --output results
+.\.venv\Scripts\python.exe msqc2.py --source MaxQuant --input path_to_txt --output results
 ```
 
-รหัสจบการทำงาน: 0 = สำเร็จ, 1 = QC สำเร็จแต่ HTML มีปัญหา, 2 = QC/การบันทึกผลล้มเหลว
+เพิ่ม `--skip-multiqc` เพื่อสร้าง Excel เท่านั้น
+Exit codes: 0 สำเร็จ, 1 Excel สำเร็จแต่ HTML ล้มเหลว/ไม่ครบ, 2 QC ล้มเหลว, 130 ผู้ใช้ยกเลิก
+Cancel จะรอการอ่านตารางปัจจุบันจบก่อน แต่ยกเลิก subprocess สร้างรายงานได้ระหว่างรัน
 
-## อัปเดตโปรแกรม
-
-ถ้าดาวน์โหลดด้วย Git ให้ปิดโปรแกรมก่อน แล้วรันในโฟลเดอร์ repository:
+## สร้าง portable และตัวติดตั้ง
 
 ```powershell
-git pull --ff-only
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe tools/generate_synthetic_qc.py --output sample_data/synthetic_qc
+.\.venv\Scripts\python.exe tools/build_windows.py
 ```
 
-ถ้าดาวน์โหลดด้วย ZIP ให้ดาวน์โหลดรุ่นใหม่และแตกลงโฟลเดอร์ใหม่ แล้วทำขั้นตอนติดตั้ง
-เก็บข้อมูลทดลองและผลลัพธ์เดิมไว้แยกจากโฟลเดอร์โปรแกรมเพื่อย้ายรุ่นได้สะดวก
+builder คัดลอก private CPython/Tcl/Tk และ site-packages จาก venv ที่ใช้ build รวม package metadata, plugin assets และ DLLs
+จึงมีขนาดค่อนข้างใหญ่ แต่หลีกเลี่ยงการพึ่ง Python ในเครื่องปลายทาง ไม่เขียนทับโฟลเดอร์ build เดิม
+ต้องมี C# compiler ของ .NET Framework สำหรับสร้าง launcher บน Windows
+ใช้ Inno Setup compile packaging/ProteomicsQC.iss เพื่อสร้าง Setup.exe จาก portable ที่ทดสอบแล้ว
 
-## การทดสอบรุ่นเริ่มต้น
+## ทดสอบและข้อจำกัด
 
-ทดสอบ integration 8 กรณี ครอบคลุมการส่งออก Excel โหมด PSM/Peptide/Protein การเก็บ `NA`
-การแยกผลตาม run ประวัติข้อผิดพลาด และการแสดงผลใน GUI
-ทดสอบเส้นทาง GUI → QC engine → PMultiQC กับไฟล์ที่มี 600 PSM โดยตัวเลขสรุปตรงกับโค้ดก่อนปรับ
-ยังต้องทดสอบกับขนาดข้อมูลจริงและสภาพแวดล้อมของเครื่องปลายทาง
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+```
 
-รุ่นนี้รันผ่าน Python; ยังไม่ได้จัดแพ็กเป็น `.exe`
+ชุด synthetic มี 6 runs และ 678 precursor/evidence rows; ทดสอบข้ามไฟล์ด้วย manifest ไม่ใช่ค่าจากการรัน DIA-NN/MaxQuant จริง
+สร้างด้วย tools/generate_synthetic_qc.py จากชื่อคอลัมน์ในเอกสาร DIA-NN ณ วันออก 2.2.0 และตารางมาตรฐาน MaxQuant
+ยังต้องตรวจไฟล์จริงของ DIA-NN/MaxQuant และทดสอบบน Windows ที่ไม่มี Python
+การอ่านตารางยังใช้ RAM ตามขนาดไฟล์ จึงต้องทดสอบข้อมูลขนาดจริงบนเครื่องปลายทาง
+
+โปรแกรมเก็บประวัติ path/size/mtime ของ input โดยไม่ทำสำเนาและไม่คำนวณ checksum ระหว่างงานปกติ
+ข้อมูลทดลองและผล QC ไม่ต้องอัปโหลด GitHub; .gitignore ข้ามข้อมูลและ build outputs
+
+หลังแพ็กแล้วพัฒนาต่อได้: แก้ source → ทดสอบ → build portable/Setup รุ่นใหม่ ไม่แก้ .exe โดยตรง
+
+## Preview 2
+
+Report workers explicitly use UTF-8 so Thai paths and custom report filenames can be validated correctly on Thai Windows locales.

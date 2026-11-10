@@ -1,0 +1,56 @@
+name: Build Windows preview
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          architecture: x64
+      - name: Install application dependencies
+        shell: pwsh
+        run: |
+          python -m venv .venv
+          .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+      - name: Generate synthetic examples and run regression checks
+        shell: pwsh
+        run: |
+          .\.venv\Scripts\python.exe tools/generate_synthetic_qc.py --output sample_data/synthetic_qc
+          .\.venv\Scripts\python.exe -m unittest discover -s tests -v
+      - name: Build and test portable EXE
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          New-Item -ItemType Directory -Path output/pdf -Force | Out-Null
+          gh release download v0.4.0 --pattern ProteomicsQC_User_Manual_TH_0.4.0.pdf --dir output/pdf
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          .\.venv\Scripts\python.exe tools/build_windows.py
+          .\.venv\Scripts\python.exe tools/verify_portable.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Compress-Archive -LiteralPath dist/ProteomicsQC_0.4.0 -DestinationPath dist/ProteomicsQC_0.4.0_Portable_x64.zip
+      - name: Build installer if Inno Setup is available
+        shell: pwsh
+        run: |
+          $compiler = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+          if (Test-Path -LiteralPath $compiler) {
+            & $compiler /Qp packaging/ProteomicsQC.iss
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          } else {
+            Write-Warning 'Inno Setup not found; portable ZIP is still available.'
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ProteomicsQC-Windows-preview
+          path: |
+            dist/*Portable*.zip
+            dist/*Setup*.exe
+          if-no-files-found: error

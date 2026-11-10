@@ -21,6 +21,7 @@ _support/
 *.tsv
 *.csv
 *.xlsx
+*.parquet
 *.raw
 *.mzML
 *.mzXML
@@ -33,3 +34,6 @@ multiqc_report*.html
 msqc_gui.before_*.py
 build/
 dist/
+sample_data/
+tmp/
+output/
