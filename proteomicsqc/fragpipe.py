@@ -15,14 +15,15 @@ MASS_COLUMNS = ("Calibrated Observed M/Z", "Calculated M/Z")
 
 def locate_psm_files(source: Path, excluded: tuple[Path, ...] = ()) -> list[Path]:
     if source.is_file():
-        if source.name.lower() != "psm.tsv":
-            raise ValueError("PSM mode requires a FragPipe file named psm.tsv.")
+        if source.suffix.lower() != ".tsv":
+            raise ValueError("PSM mode requires a FragPipe TSV file; its filename can be customized.")
         return [source]
     if not source.is_dir():
         raise FileNotFoundError(f"Input does not exist: {source}")
-    files = [path for path in scan_files(source, excluded) if path.name.lower() == "psm.tsv"]
+    files = [path for path in scan_files(source, excluded)
+             if path.suffix.lower() == ".tsv" and path.stem.lower().startswith("psm")]
     if not files:
-        raise ValueError(f"No psm.tsv found under: {source}")
+        raise ValueError(f"No psm*.tsv found under: {source}. Select a PSM TSV file explicitly if it has another name.")
     return files
 
 

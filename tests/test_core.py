@@ -20,6 +20,7 @@ from proteomicsqc.gui import MSQCApp
 from proteomicsqc.reporting import validate_report
 from proteomicsqc.runtime import Cancelled
 from proteomicsqc.tables import save_workbook
+from proteomicsqc.outputs import create_run_directory, validate_report_name
 
 FIXTURES = ROOT / "sample_data" / "synthetic_qc"
 
@@ -77,6 +78,58 @@ class CoreTests(unittest.TestCase):
             if isinstance(value, (float, int)):
                 self.assertAlmostEqual(float(actual[key]), value)
         self.assertEqual(code, 0)
+
+    def test_custom_psm_filename_and_folder_discovery(self):
+        custom = self.root / "HeLa รอบสอง.tsv"
+        custom.write_bytes(self.psm.read_bytes())
+        code, outdir = self.analyze(custom)
+        self.assertEqual(code, 0)
+        frame = pd.read_excel(outdir / "QC_summary.xlsx", sheet_name="Summary")
+        self.assertEqual(frame.iloc[0].psms, 4)
+        self.assertEqual(Path(frame.iloc[0].source_file), custom)
+        variant = self.root / "psm_2.tsv"
+        variant.write_bytes(self.psm.read_bytes())
+        self.assertEqual(set(adapters.locate_inputs(self.root, "FragPipe", "PSM")), {self.psm, variant})
+
+    def test_named_output_unicode_collision_and_invalid_paths(self):
+        named = create_run_directory(self.root, "HeLa QC รอบสอง")
+        self.assertEqual(named, self.root / "HeLa QC รอบสอง")
+        marker = named / "keep.txt"
+        marker.write_text("existing results")
+        with self.assertRaises(ValueError):
+            create_run_directory(self.root, named.name)
+        self.assertEqual(marker.read_text(), "existing results")
+        for name in ("../escape", "C:\\escape", "..", "CON", "NUL.txt", "run.", " run", "run ", "a/b", "a?b"):
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                validate_report_name(name)
+
+    def test_gui_custom_input_named_folder_and_existing_result(self):
+        app = MSQCApp()
+        app.withdraw()
+        custom = self.root / "psm_2.tsv"
+        custom.write_bytes(self.psm.read_bytes())
+        try:
+            app.input_var.set(str(custom))
+            app.output_var.set(str(self.root / "GUI"))
+            app.report_name_var.set("HeLa รอบสอง")
+            with patch("proteomicsqc.gui.messagebox.showerror") as error, patch("proteomicsqc.gui.messagebox.showwarning") as warning:
+                app.run_qc()
+                deadline = time.monotonic() + 30
+                while app.busy and time.monotonic() < deadline:
+                    app.update()
+                    time.sleep(0.02)
+                self.assertFalse(app.busy)
+                error.assert_not_called()
+                warning.assert_not_called()
+                self.assertEqual(app.result_dir, self.root / "GUI" / "HeLa รอบสอง")
+                self.assertEqual(history(app.result_dir)["status"], "complete")
+                before = (app.result_dir / "QC_summary.xlsx").read_bytes()
+                app.run_qc()
+                warning.assert_called_once()
+                self.assertFalse(app.busy)
+                self.assertEqual(before, (app.result_dir / "QC_summary.xlsx").read_bytes())
+        finally:
+            app.destroy()
 
     def test_peptide_and_protein_literal_na(self):
         for level, column, label in (("Peptide", "Peptide", "unique_peptides"), ("Protein", "Protein", "unique_protein_identifiers")):

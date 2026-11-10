@@ -37,7 +37,7 @@ def run_analysis(source, outdir, level="PSM", html=False, output_root=None, data
         "level": level, "selected_input": str(source), "output_directory": str(outdir),
         "pmultiqc_requested": html, "pmultiqc_status": "pending" if html else "not requested",
         "pmultiqc_scan_folder": str(folder) if html else "",
-        "pmultiqc_scope_note": "Inventory lists scan candidates, not proof that PMultiQC parsed each file. DIA-NN uses the selected main report only.",
+        "pmultiqc_scope_note": "Inventory lists scan candidates, not proof that PMultiQC parsed each file. FragPipe uses exactly the selected/discovered PSM files; DIA-NN uses the selected main report only. Optional supporting files are scanned from the folder.",
         "gui_processing": "Trim text; blank cells are missing; preserve literal NA. Retain every input row.",
         "gui_filters": "None: no q-value/FDR filter, decoy/contaminant removal, deduplication, imputation, or renormalisation.",
         "pmultiqc_processing": "Original files with PMultiQC's own metric-specific rules, including decoy/reverse handling. Counts can differ from Excel.",

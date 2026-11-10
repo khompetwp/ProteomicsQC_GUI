@@ -1,11 +1,9 @@
 """Tk desktop interface. All analysis runs in a separate process."""
-from datetime import datetime
 import os
 from pathlib import Path
 import queue
 import subprocess
 import sys
-import tempfile
 import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
@@ -14,6 +12,7 @@ import webbrowser
 import pandas as pd
 from . import __version__
 from .adapters import SOURCES, LEVELS as SOURCE_LEVELS
+from .outputs import create_run_directory, validate_report_name
 
 LEVELS = SOURCE_LEVELS["FragPipe"]
 
@@ -28,6 +27,12 @@ class MSQCApp(tk.Tk):
         self.source_var = tk.StringVar(value="FragPipe")
         self.source_var.trace_add("write", self._source_changed)
         self.output_var = tk.StringVar()
+        self.report_name_var = tk.StringVar()
+        assets = Path(__file__).with_name("assets")
+        self.logo_image = tk.PhotoImage(file=str(assets / "logo.png"))
+        self.iconphoto(True, self.logo_image)
+        if os.name == "nt":
+            self.iconbitmap(str(assets / "logo.ico"))
         self.multiqc_var = tk.BooleanVar(value=False)
         self.status_var = tk.StringVar(value="Ready — select a TSV file or a folder containing psm.tsv files")
         self.summary_var = tk.StringVar(value="Run QC to see results here.")
@@ -49,6 +54,7 @@ class MSQCApp(tk.Tk):
         main.rowconfigure(8, weight=1)
         heading = ttk.Frame(main)
         heading.grid(row=0, column=0, columnspan=4, sticky="ew", pady=(0, 14))
+        ttk.Label(heading, image=self.logo_image).pack(side="left", padx=(0, 10))
         ttk.Label(heading, text="ProteomicsQC", font=("Segoe UI", 19, "bold")).pack(side="left", padx=(0, 24))
         ttk.Label(heading, text="Data source").pack(side="left", padx=(0, 8))
         self.source_box = ttk.Combobox(heading, textvariable=self.source_var, values=SOURCES, state="readonly", width=15)
@@ -63,16 +69,23 @@ class MSQCApp(tk.Tk):
         self.level_box = ttk.Combobox(main, textvariable=self.level_var, values=LEVELS, state="readonly", width=18)
         self.level_box.grid(row=2, column=1, sticky="w", padx=10, pady=5)
         self.level_box.bind("<<ComboboxSelected>>", self._level_changed)
-        ttk.Label(main, text="Output folder").grid(row=3, column=0, sticky="w")
+        ttk.Label(main, text="Output parent folder").grid(row=3, column=0, sticky="w")
         entry = ttk.Entry(main, textvariable=self.output_var)
         entry.grid(row=3, column=1, sticky="ew", padx=10, pady=5)
         self.controls.append(entry)
         self._button(main, "Browse…", self.browse_output, 3, 2)
         self.multiqc_check = ttk.Checkbutton(main, text="Create PMultiQC HTML report (uses PMultiQC's own metric rules)", variable=self.multiqc_var)
-        self.multiqc_check.grid(row=4, column=1, columnspan=3, sticky="w", padx=10, pady=5)
-        ttk.Label(main, textvariable=self.scope_var, wraplength=1000, foreground="#555555").grid(row=5, column=0, columnspan=4, sticky="w", pady=5)
+        naming = ttk.Frame(main)
+        naming.grid(row=4, column=0, columnspan=4, sticky="ew", pady=5)
+        ttk.Label(naming, text="Report folder name").pack(side="left")
+        name_entry = ttk.Entry(naming, textvariable=self.report_name_var, width=38)
+        name_entry.pack(side="left", padx=10)
+        self.controls.append(name_entry)
+        ttk.Label(naming, text="Optional; blank = automatic name").pack(side="left")
+        self.multiqc_check.grid(row=5, column=1, columnspan=3, sticky="w", padx=10, pady=5)
+        ttk.Label(main, textvariable=self.scope_var, wraplength=1000, foreground="#555555").grid(row=6, column=0, columnspan=4, sticky="w", pady=5)
         actions = ttk.Frame(main)
-        actions.grid(row=6, column=0, columnspan=4, sticky="ew", pady=10)
+        actions.grid(row=7, column=0, columnspan=4, sticky="ew", pady=10)
         self.run_btn = ttk.Button(actions, text="Run QC", command=self.run_qc)
         self.run_btn.pack(side="left")
         self.controls.append(self.run_btn)
@@ -86,9 +99,11 @@ class MSQCApp(tk.Tk):
         self.report_btn.pack(side="left")
         self.progress = ttk.Progressbar(actions, mode="indeterminate")
         self.progress.pack(side="right", fill="x", expand=True, padx=(20, 0))
-        ttk.Label(main, textvariable=self.summary_var, wraplength=1000, font=("Segoe UI", 10, "bold")).grid(row=7, column=0, columnspan=4, sticky="w", pady=(0, 10))
+        ttk.Label(main, textvariable=self.summary_var, wraplength=1000, font=("Segoe UI", 10, "bold")).grid(row=8, column=0, columnspan=4, sticky="w", pady=(0, 10))
         tabs = ttk.Notebook(main)
-        tabs.grid(row=8, column=0, columnspan=4, sticky="nsew")
+        main.rowconfigure(8, weight=0)
+        main.rowconfigure(9, weight=1)
+        tabs.grid(row=9, column=0, columnspan=4, sticky="nsew")
         self.tables = {}
         for name in ("Summary", "By run", "Numeric audit", "Missing values", "Input files", "Run info"):
             frame = ttk.Frame(tabs)
@@ -110,10 +125,10 @@ class MSQCApp(tk.Tk):
         scroll.pack(side="right", fill="y")
         self.log.configure(yscrollcommand=scroll.set)
         tabs.add(log_frame, text="Log")
-        ttk.Label(main, textvariable=self.status_var, wraplength=1000).grid(row=9, column=0, columnspan=4, sticky="w", pady=(10, 0))
+        ttk.Label(main, textvariable=self.status_var, wraplength=1000).grid(row=10, column=0, columnspan=4, sticky="w", pady=(10, 0))
         self.protocol("WM_DELETE_WINDOW", self._close)
         self._scope_changed()
-        self.after(100, self._poll)
+        self.poll_id = self.after(100, self._poll)
 
     def _scope_changed(self, *args):
         selected = self.input_var.get().strip().strip('"')
@@ -122,7 +137,7 @@ class MSQCApp(tk.Tk):
             if selected:
                 path = Path(selected).expanduser()
                 scan = path.parent if path.is_file() else path
-                note += f"\n{self.source_var.get()}: PMultiQC scans the input folder; DIA-NN uses the selected main report. Input: {scan}"
+                note += f"\n{self.source_var.get()}: PMultiQC scans supporting files in the input folder; PSM/main reports use the selected input. Input: {scan}"
             else:
                 note += "\nPMultiQC scans the whole selected folder (or the selected file's parent)."
         else:
@@ -181,8 +196,8 @@ class MSQCApp(tk.Tk):
             data_source = self.source_var.get()
             if data_source == "FragPipe" and level != "PSM" and (not source.is_file() or source.suffix.lower() != ".tsv"):
                 raise ValueError("Peptide and Protein modes require a single TSV file.")
-            if data_source == "FragPipe" and level == "PSM" and source.is_file() and source.name.lower() != "psm.tsv":
-                raise ValueError("PSM mode uses msqc2.py and requires a file named psm.tsv.")
+            if data_source == "FragPipe" and level == "PSM" and source.is_file() and source.suffix.lower() != ".tsv":
+                raise ValueError("PSM mode requires a FragPipe TSV file (any filename).")
             if not Path(__file__).resolve().parents[1].joinpath("msqc2.py").is_file():
                 raise ValueError("Place msqc2.py in the same folder as this GUI.")
             try:
@@ -191,6 +206,9 @@ class MSQCApp(tk.Tk):
                 raise ValueError("Excel output requires openpyxl. Install requirements.txt in this Python environment.")
             output = self.output_var.get().strip().strip('"')
             root = Path(output).expanduser().resolve() if output else (source if source.is_dir() else source.parent) / "ResultQC"
+            report_name = validate_report_name(self.report_name_var.get())
+            if report_name and (root / report_name).exists():
+                raise ValueError("Report folder already exists. Choose a new name; previous results are preserved.")
         except (OSError, ValueError) as exc:
             messagebox.showwarning("Check input", str(exc))
             return
@@ -216,14 +234,13 @@ class MSQCApp(tk.Tk):
         self.summary_var.set("Processing…")
         self.status_var.set("Running QC…")
         self.progress.start(12)
-        threading.Thread(target=self._worker, args=(source, level, root, self.multiqc_var.get(), data_source), daemon=True).start()
+        threading.Thread(target=self._worker, args=(source, level, root, self.multiqc_var.get(), data_source, report_name), daemon=True).start()
 
-    def _worker(self, source, level, root, html, data_source="FragPipe"):
+    def _worker(self, source, level, root, html, data_source="FragPipe", report_name=""):
         outdir = None
         tail = []
         try:
-            root.mkdir(parents=True, exist_ok=True)
-            outdir = Path(tempfile.mkdtemp(prefix=datetime.now().strftime("qc_%Y%m%d_%H%M%S_"), dir=root))
+            outdir = create_run_directory(root, report_name)
             self.active_outdir = outdir
             if self.cancel_requested.is_set():
                 (outdir / ".cancel_requested").touch()
@@ -293,7 +310,13 @@ class MSQCApp(tk.Tk):
                         messagebox.showerror("QC failed", error)
         except queue.Empty:
             pass
-        self.after(100, self._poll)
+        self.poll_id = self.after(100, self._poll)
+
+    def destroy(self):
+        if getattr(self, "poll_id", None):
+            self.after_cancel(self.poll_id)
+            self.poll_id = None
+        super().destroy()
 
     def _finish(self):
         self.busy = False

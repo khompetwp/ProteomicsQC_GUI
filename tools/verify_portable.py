@@ -37,6 +37,14 @@ def run(portable, fragpipe=None):
              ("MaxQuant", "MaxQuant", portable / "Examples" / "SYNTHETIC_ONLY" / "maxquant_unspecified")]
     if fragpipe:
         cases.append(("FragPipe", "FragPipe", fragpipe))
+        for filename in ("psm_2.tsv", "HeLa รอบสอง.tsv"):
+            renamed_folder = output / ("input_" + Path(filename).stem)
+            renamed_folder.mkdir()
+            renamed = renamed_folder / filename
+            shutil.copyfile(fragpipe, renamed)
+            # A neighboring canonical file must never replace the selected PSM.
+            (renamed_folder / "psm.tsv").write_text("invalid\nnot a PSM table\n", encoding="utf-8")
+            cases.append(("FragPipe-" + Path(filename).stem, "FragPipe", renamed))
     unicode_input = output / "ทดสอบ QC"
     unicode_input.mkdir()
     unicode_report = unicode_input / "report DIA 2.2.parquet"
@@ -46,10 +54,13 @@ def run(portable, fragpipe=None):
     for label, source, path in cases:
         target = output / label
         digest = hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+        report_name = "HeLa QC รอบสอง" if label.startswith("FragPipe-") else ""
         command = [str(launcher), "--cli", "--source", source, "--input", str(path), "--output", str(target)]
+        if report_name:
+            command.extend(["--report-name", report_name])
         started = time.monotonic()
         result = subprocess.run(command, env=environment, timeout=180, check=False, capture_output=True)
-        folder = next(target.glob("qc_*"))
+        folder = target / report_name if report_name else next(target.glob("qc_*"))
         book = folder / "QC_summary.xlsx"
         history = pd.read_excel(book, sheet_name="Run info", keep_default_na=False)
         history = dict(zip(history.setting, history.value))
@@ -59,6 +70,15 @@ def run(portable, fragpipe=None):
         assert sorted(path.name for path in folder.iterdir()) == ["QC_summary.xlsx", "_support", "multiqc_report.html"]
         if digest:
             assert hashlib.sha256(path.read_bytes()).hexdigest() == digest
+        if report_name:
+            summary = pd.read_excel(book, sheet_name="Summary")
+            assert Path(summary.iloc[0].source_file) == path
+            assert summary.iloc[0].psms == len(pd.read_csv(fragpipe, sep="\t"))
+            assert history["pmultiqc_selected_psm_files"] == str(path)
+            before = hashlib.sha256(book.read_bytes()).hexdigest()
+            repeat = subprocess.run(command, env=environment, timeout=30, check=False, capture_output=True)
+            assert repeat.returncode == 2, "A named report must never overwrite an existing report"
+            assert hashlib.sha256(book.read_bytes()).hexdigest() == before
         results.append({"source": source, "case": label, "status": "complete", "plot_count": history["pmultiqc_plot_count"],
                         "seconds": round(time.monotonic() - started, 1), "result_directory": str(folder)})
     # Cancel while the HTML phase is starting, and require a persisted cancellation status.

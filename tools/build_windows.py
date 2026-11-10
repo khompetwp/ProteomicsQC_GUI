@@ -44,7 +44,7 @@ def build(destination):
     shutil.copytree(ROOT / "sample_data" / "synthetic_qc", destination / "Examples" / "SYNTHETIC_ONLY")
     compiler = Path(r"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe")
     subprocess.run([str(compiler), "/nologo", "/target:winexe", "/platform:x64", "/optimize+",
-                    "/reference:System.Windows.Forms.dll", f"/out:{destination / 'ProteomicsQC.exe'}",
+                    "/reference:System.Windows.Forms.dll", f"/win32icon:{ROOT / 'proteomicsqc' / 'assets' / 'logo.ico'}", f"/out:{destination / 'ProteomicsQC.exe'}",
                     str(ROOT / "packaging" / "Launcher.cs")], check=True)
     versions = {dist.metadata["Name"]: dist.version for dist in metadata.distributions() if dist.metadata.get("Name")}
     (destination / "_internal" / "environment.json").write_text(json.dumps({"python": sys.version, "packages": versions}, indent=2), encoding="utf-8")

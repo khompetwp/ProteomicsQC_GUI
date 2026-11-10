@@ -2,7 +2,7 @@
 
 Windows desktop QC for FragPipe, DIA-NN and MaxQuant, with compact Excel summaries and optional PMultiQC HTML reports.
 
-รุ่น 0.3.0-preview.2 สำหรับ Windows 10/11 x64 — โปรแกรมสรุป QC ของตารางผลวิเคราะห์ ไม่ประมวลผล RAW เพื่อค้นหา peptide/protein เอง
+รุ่น 0.3.0-preview.3 สำหรับ Windows 10/11 x64 — โปรแกรมสรุป QC ของตารางผลวิเคราะห์ ไม่ประมวลผล RAW เพื่อค้นหา peptide/protein เอง
 
 ## ใช้ชุด portable โดยไม่ติดตั้ง
 
@@ -18,13 +18,13 @@ Windows desktop QC for FragPipe, DIA-NN and MaxQuant, with compact Excel summari
 
 1. เลือก **Data source** ให้ตรงกับโปรแกรมต้นทาง
 2. เลือกไฟล์หรือโฟลเดอร์ผลวิเคราะห์ และ Data level
-3. เลือกโฟลเดอร์ผลลัพธ์ที่เขียนได้; ปล่อยว่างใช้ ResultQC ใกล้ input
+3. เลือก Output parent folder ที่เขียนได้; ปล่อยว่างใช้ ResultQC ใกล้ input แล้วตั้ง Report folder name ได้ เช่น `HeLa QC รอบสอง`; เว้นชื่อว่างใช้ชื่ออัตโนมัติ ชื่อซ้ำจะแจ้งเตือนโดยไม่เขียนทับ
 4. ติ๊กสร้าง HTML หากต้องการ แล้วกด Run QC
 5. เปิด Excel/HTML จากปุ่มในโปรแกรม หรือกด Cancel เพื่อขอยกเลิก
 
 | Data source | Input | หน่วยที่โปรแกรมนับ |
 |---|---|---|
-| FragPipe | psm.tsv หรือโฟลเดอร์ค้นหา psm.tsv; peptide.tsv/protein.tsv ทีละไฟล์ | PSM / peptide / protein identifiers ตามโหมด |
+| FragPipe | เลือก PSM TSV ชื่อใดก็ได้ เช่น psm_2.tsv; เลือกโฟลเดอร์จะค้นหา psm*.tsv; peptide/protein TSV ทีละไฟล์ | PSM / peptide / protein identifiers ตามโหมด |
 | DIA-NN | main report .parquet หรือ .tsv; เริ่มพัฒนาจากคอลัมน์ 2.2.0 | precursor observations ต่อ run, unique precursors, peptide sequences, protein-group strings |
 | MaxQuant | โฟลเดอร์ txt หรือโฟลเดอร์ที่มี txt; ต้องมี evidence.txt, msms.txt, proteinGroups.txt | evidence features, MS/MS PSM rows และ protein-group rows แยกกัน |
 
@@ -58,7 +58,7 @@ GUI แสดง 1,000 แถวแรกต่อแท็บ แต่ Excel �
 จึงอาจมีตัวเลขต่างจาก Excel ซึ่งนับทุกแถวของ input โปรแกรมตรวจว่ารายงานมี plot data และตรวจข้อความ plugin ล้มเหลว
 หากสร้าง HTML ได้แต่บางส่วนอ่านไม่สำเร็จจะรายงาน partial; ควรตรวจ Log ก่อนนำรายงานไปใช้
 
-FragPipe PMultiQC สแกนทั้งโฟลเดอร์ input หรือ parent ของไฟล์ที่เลือก จึงอาจเห็นไฟล์มากกว่าส่วน Excel QC
+FragPipe PMultiQC ใช้ PSM ชุดเดียวกับที่เลือก/ค้นพบสำหรับ Excel QC โดยส่ง path ต้นฉบับให้ worker รองรับชื่อไฟล์กำหนดเอง ไม่เปลี่ยนชื่อหรือคัดลอกข้อมูล ส่วนไฟล์ประกอบ เช่น combined_protein.tsv ยังสแกนจากโฟลเดอร์ input
 DIA-NN ใช้ main report ที่เลือก ส่วน log/metadata อาจอ่านจากโฟลเดอร์เดียวกัน
 MaxQuant ใช้โฟลเดอร์ที่มีชุดตารางที่ตรวจพบ
 โฟลเดอร์ผลของโปรแกรมและ _support จะถูกข้ามในการสแกน
@@ -83,6 +83,7 @@ py -3.13 -m venv .venv
 
 ```powershell
 .\.venv\Scripts\python.exe msqc2.py --source FragPipe --input data --output results
+.\.venv\Scripts\python.exe msqc2.py --source FragPipe --input psm_2.tsv --output results --report-name "HeLa QC รอบสอง"
 .\.venv\Scripts\python.exe msqc2.py --source DIA-NN --input report.parquet --output results
 .\.venv\Scripts\python.exe msqc2.py --source MaxQuant --input path_to_txt --output results
 ```

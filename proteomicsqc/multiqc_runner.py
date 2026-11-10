@@ -5,8 +5,29 @@ errors on dictionary-encoded DIA-NN Run labels and numeric MaxQuant group IDs;
 they do not alter the plugin's filters or scientific calculations.
 """
 from importlib.metadata import version
+import json
+import os
 import runpy
 import sys
+
+
+def install_fragpipe_selection():
+    selected = os.environ.get("PROTEOMICSQC_PSM_INPUTS")
+    if selected is None:
+        return
+    from pathlib import Path
+    paths = json.loads(selected)
+    if not paths or not all(Path(path).is_file() for path in paths):
+        raise ValueError("Selected FragPipe PSM files are unavailable.")
+    from pmultiqc.modules.fragpipe import fragpipe
+    original = fragpipe.get_fragpipe_files
+
+    def get_files(find_log_files):
+        files = original(find_log_files) or {}
+        files["psm"] = paths
+        return files
+
+    fragpipe.get_fragpipe_files = get_files
 
 
 def install_compatibility():
@@ -40,6 +61,7 @@ def main():
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(encoding="utf-8", errors="replace")
     install_compatibility()
+    install_fragpipe_selection()
     sys.argv[0] = "multiqc"
     runpy.run_module("multiqc", run_name="__main__")
 

@@ -68,6 +68,11 @@ def run_pmultiqc(source, files, outdir, excluded, data_source, info, check_cance
         if Path(scratch).resolve().parent != outdir.resolve():
             raise RuntimeError("Invalid report scratch directory.")
         environment = {**os.environ, "PYTHONIOENCODING": "utf-8", "TEMP": scratch, "TMP": scratch, "TMPDIR": scratch}
+        # Pass exact PSM paths separately from optional folder-wide supporting files.
+        environment.pop("PROTEOMICSQC_PSM_INPUTS", None)
+        if data_source == "FragPipe":
+            environment["PROTEOMICSQC_PSM_INPUTS"] = json.dumps([str(path.resolve()) for path in files])
+            info["pmultiqc_selected_psm_files"] = " | ".join(str(path) for path in files)
         with subprocess.Popen(command, cwd=outdir, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                               text=True, encoding="utf-8", errors="replace", env=environment, **options) as process:
             def read_output():
