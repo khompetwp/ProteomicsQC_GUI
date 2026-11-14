@@ -42,7 +42,8 @@ def run_analysis(source, outdir, level="PSM", html=False, output_root=None, data
         "gui_filters": "None: no q-value/FDR filter, decoy/contaminant removal, deduplication, imputation, or renormalisation.",
         "pmultiqc_processing": "Original files with PMultiQC's own metric-specific rules, including decoy/reverse handling. Counts can differ from Excel.",
         "pmultiqc_compatibility": "PMultiQC 0.0.48 only: read dictionary-encoded DIA-NN text labels and numeric MaxQuant group IDs as strings to avoid plugin dtype errors. No filter changes.",
-        "counting_unit": {"FragPipe": level, "DIA-NN": "precursor observation per run; not DDA PSMs", "MaxQuant": "evidence features, MS/MS PSM rows, protein-group rows separately"}[data_source],
+        "counting_unit": {"FragPipe": level, "DIA-NN": "precursor observation per run; not DDA PSMs", "MaxQuant": "evidence features, MS/MS PSM rows, protein-group rows separately",
+                          "Proteome Discoverer": "All SpectrumIdentificationItem entries, including alternative ranks and failed thresholds; protein accessions referenced by evidence, not protein groups."}[data_source],
         "mbr_note": "MaxQuant Type labels are reported as supplied; other/unknown labels remain explicit. DIA-NN per-row MBR provenance is not inferred.",
         "unique_counts_note": "Unique counts are per file/run. Protein-group strings are not counts of individual proteins. Do not sum per-run uniques as a global unique count.",
         "numeric_processing": "Non-numeric and infinite values are excluded from statistics; their rows remain counted.",
@@ -50,6 +51,11 @@ def run_analysis(source, outdir, level="PSM", html=False, output_root=None, data
         "python_version": platform.python_version(), "python_executable": sys.executable,
         "operating_system": platform.platform(), "error": "",
     }
+    if data_source == "Proteome Discoverer":
+        info.update(gui_processing="mzIdentML identification items retained without filtering. No spectrum arrays read for Excel.",
+                    rt_note="Convert RT to seconds only with explicit second/minute unit. Unitless PD RT is retained as an unspecified unit and omitted from RT statistics.",
+                    quantification_note="PD Excel LFQ/TMT abundance tables are not imported by this mode.",
+                    pmultiqc_scope_note="Only selected/discovered mzid files and same-folder, same-name mzML/MGF pairs are passed using --file-list. mzML preferred over MGF.")
     for package in ("pandas", "openpyxl", "pyarrow", "pmultiqc", "multiqc"):
         try:
             info[package + "_version"] = version(package)
@@ -67,7 +73,13 @@ def run_analysis(source, outdir, level="PSM", html=False, output_root=None, data
                 if data_source in ("DIA-NN", "MaxQuant"):
                     folder = files[0].parent
                     info["pmultiqc_scan_folder"] = str(folder) if html else ""
-                inventory = scan_files(folder, excluded) if html else files
+                if data_source == "Proteome Discoverer":
+                    pairs = adapters.discoverer.spectrum_pairs(files)
+                    inventory = sorted(set(files) | {p for p in pairs.values() if p})
+                    info["paired_spectrum_files"] = " | ".join(str(p) for p in pairs.values() if p)
+                    info["missing_spectrum_pair_count"] = sum(p is None for p in pairs.values())
+                else:
+                    inventory = scan_files(folder, excluded) if html else files
                 tables["Input files"] = pd.DataFrame([file_record(path, path in files, html and path in inventory)
                                                      for path in sorted(set(files) | set(inventory))])
                 info["input_file_count"] = len(files)

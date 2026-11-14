@@ -4,11 +4,12 @@ import re
 
 import pandas as pd
 
-from . import fragpipe
+from . import fragpipe, discoverer
 from .tables import missingness, numeric_column, read_table, scan_files
 
-SOURCES = ("FragPipe", "DIA-NN", "MaxQuant")
-LEVELS = {"FragPipe": fragpipe.LEVELS, "DIA-NN": ("Precursor",), "MaxQuant": ("Evidence",)}
+SOURCES = ("FragPipe", "DIA-NN", "MaxQuant", discoverer.SOURCE)
+LEVELS = {"FragPipe": fragpipe.LEVELS, "DIA-NN": ("Precursor",), "MaxQuant": ("Evidence",),
+          discoverer.SOURCE: ("Identification",)}
 DIANN_REQUIRED = ("Run", "Precursor.Id", "Stripped.Sequence", "Protein.Group")
 MAXQUANT_REQUIRED = {
     "evidence.txt": ("Raw file", "Sequence", "Type", "Protein group IDs"),
@@ -22,6 +23,8 @@ def locate_inputs(source: Path, data_source: str, level: str, excluded=()) -> li
         raise FileNotFoundError(f"Input does not exist: {source}")
     if level not in LEVELS[data_source]:
         raise ValueError(f"{data_source} requires level: {', '.join(LEVELS[data_source])}")
+    if data_source == discoverer.SOURCE:
+        return discoverer.locate_inputs(source, excluded)
     if data_source == "FragPipe":
         if level == "PSM":
             return fragpipe.locate_psm_files(source, excluded)
@@ -161,6 +164,8 @@ def analyze_maxquant(files, check_cancel):
 
 
 def analyze(files, data_source, level, check_cancel):
+    if data_source == discoverer.SOURCE:
+        return discoverer.analyze(files, check_cancel)
     if data_source == "DIA-NN":
         return analyze_diann(files[0], check_cancel)
     if data_source == "MaxQuant":

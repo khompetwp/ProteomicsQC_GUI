@@ -4,10 +4,11 @@ from importlib.metadata import version
 import json
 from pathlib import Path
 import sys
+from . import __version__
 
 
 def main():
-    result = {"python": sys.version.split()[0], "executable": sys.executable,
+    result = {"application_version": __version__, "python": sys.version.split()[0], "executable": sys.executable,
               "prefix": sys.prefix, "packages": {}, "gui_created": False}
     try:
         for name in ("pandas", "openpyxl", "pyarrow", "pmultiqc", "multiqc", "ttkbootstrap"):

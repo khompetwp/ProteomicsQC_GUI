@@ -80,7 +80,7 @@ class MSQCApp(tk.Tk):
         for column in (3, 4):
             setup.columnconfigure(column, weight=1)
         ttk.Label(setup, text="Data source").grid(row=0, column=0, sticky="w", pady=5)
-        self.source_box = ttk.Combobox(setup, textvariable=self.source_var, values=SOURCES, state="readonly", width=12)
+        self.source_box = ttk.Combobox(setup, textvariable=self.source_var, values=SOURCES, state="readonly", width=21)
         self.source_box.grid(row=0, column=1, sticky="w", padx=(8, 20))
         ttk.Label(setup, text="Data level").grid(row=0, column=2, sticky="w")
         self.level_box = ttk.Combobox(setup, textvariable=self.level_var, values=LEVELS, state="readonly", width=13)
@@ -173,7 +173,8 @@ class MSQCApp(tk.Tk):
         selected = self.input_var.get().strip().strip('"')
         hints = {"FragPipe": "PSM: select any TSV filename, or a folder containing psm*.tsv. Peptide/Protein: select one TSV file.",
                  "DIA-NN": "Select a main .parquet / .tsv report, not a matrix or spectral library. Target schema: DIA-NN 2.2.0.",
-                 "MaxQuant": "Select the txt folder containing evidence.txt, msms.txt and proteinGroups.txt (standard filenames)."}
+                 "MaxQuant": "Select the txt folder containing evidence.txt, msms.txt and proteinGroups.txt (standard filenames).",
+                 "Proteome Discoverer": "Select a .mzid or a folder of .mzid files. HTML: same-folder, same-name .mzML/.mgf pairs. Excel: identification only; PD abundance Excel is not imported."}
         self.input_hint_var.set(hints[self.source_var.get()])
         try:
             source = Path(selected).expanduser() if selected else None
@@ -189,7 +190,7 @@ class MSQCApp(tk.Tk):
             self.after_cancel(self.validation_id)
         self.validation_generation += 1
         if selected and not self.busy:
-            self.schema_var.set("Checking input headers…")
+            self.schema_var.set("Checking input structure and file pairs…")
             self.validation_id = self.after(450, self._validate_async)
         elif not selected:
             self.schema_var.set("Select an input file or folder.")
@@ -202,7 +203,7 @@ class MSQCApp(tk.Tk):
         def work():
             try:
                 files, warnings = check_input(source, data_source, level, html=html)
-                text = "Input headers checked: " + str(len(files)) + " file(s). " + (" ".join(warnings) if warnings else "Required columns found; no quality PASS/FAIL decision is made.")
+                text = "Input checked: " + str(len(files)) + " file(s). " + (" ".join(warnings) if warnings else "Required columns found; no quality PASS/FAIL decision is made.")
             except Exception as exc:
                 text = "Check input: " + str(exc)
             self.events.put(("validation", generation, text))
@@ -247,7 +248,7 @@ class MSQCApp(tk.Tk):
             self.status_var.set("Settings could not be saved: " + str(exc))
 
     def browse_input(self):
-        types = {"FragPipe": "*.tsv", "DIA-NN": "*.parquet *.tsv", "MaxQuant": "*.txt"}
+        types = {"FragPipe": "*.tsv", "DIA-NN": "*.parquet *.tsv", "MaxQuant": "*.txt", "Proteome Discoverer": "*.mzid"}
         selected = filedialog.askopenfilename(title="Select " + self.source_var.get() + " report", initialdir=self.preferences.get("input_folder", ""), filetypes=[("Proteomics reports", types[self.source_var.get()]), ("All files", "*.*")])
         if selected:
             self.input_var.set(selected)
@@ -460,7 +461,8 @@ class MSQCApp(tk.Tk):
                     summary = df
                     wanted = {"FragPipe": ("source_file", "psms", "unique_peptide_sequences", "median_charge", "rows", "unique_peptides", "unique_protein_identifiers"),
                               "DIA-NN": ("source_file", "input_rows", "unique_precursors", "unique_peptide_sequences", "protein_group_strings"),
-                              "MaxQuant": ("selected_level", "rows", "psm_rows", "protein_group_rows")}[data_source]
+                              "MaxQuant": ("selected_level", "rows", "psm_rows", "protein_group_rows"),
+                              "Proteome Discoverer": ("source_file", "psm_items", "rank1_passing_items", "unique_peptide_sequences", "referenced_protein_accessions", "paired_spectrum_file")}[data_source]
                     df = df[[column for column in wanted if column in df]].copy()
                     if "source_file" in df:
                         df["source_file"] = df.source_file.map(lambda value: Path(str(value)).name)
@@ -480,11 +482,16 @@ class MSQCApp(tk.Tk):
             elif data_source == "MaxQuant" and summary is not None and not summary.empty:
                 counts = pd.read_excel(workbook, sheet_name="By run", usecols=["evidence_rows", "psm_rows"])
                 self.summary_var.set(f"MaxQuant QC complete | Evidence rows: {int(counts.evidence_rows.sum()):,} | MS/MS PSM rows: {int(counts.psm_rows.sum()):,}")
+            elif data_source == "Proteome Discoverer" and summary is not None and not summary.empty:
+                all_counts = pd.read_excel(workbook, sheet_name="Summary", usecols=["psm_items"])
+                self.summary_var.set(f"PD identification QC | Items retained: {int(all_counts.psm_items.sum()):,} | Includes all ranks and threshold flags; no abundance import")
             elif summary is not None and not summary.empty:
                 self.summary_var.set(f"{level} QC complete — {int(summary.iloc[0]['rows']):,} rows")
             if "By run" in workbook.sheet_names:
                 runs = pd.read_excel(workbook, sheet_name="By run", keep_default_na=False, nrows=6)
                 wanted = ("run", "psms", "unique_peptide_sequences", "median_charge") if data_source == "FragPipe" else (("run", "input_rows", "unique_precursors", "unique_peptide_sequences") if data_source == "DIA-NN" else ("run", "evidence_rows", "psm_rows", "mbr_evidence_rows"))
+                if data_source == "Proteome Discoverer":
+                    wanted = ("run", "psm_items", "rank1_passing_items", "unique_peptide_sequences")
                 runs = runs[[column for column in wanted if column in runs]]
                 if not runs.empty:
                     self.run_preview.configure(columns=list(runs.columns))

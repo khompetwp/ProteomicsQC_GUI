@@ -10,8 +10,10 @@ import tempfile
 import threading
 
 from .tables import inside
+from . import discoverer
 
-PLUGIN_FLAGS = {"FragPipe": "--fragpipe-plugin", "DIA-NN": "--diann-plugin", "MaxQuant": "--maxquant-plugin"}
+PLUGIN_FLAGS = {"FragPipe": "--fragpipe-plugin", "DIA-NN": "--diann-plugin", "MaxQuant": "--maxquant-plugin",
+                discoverer.SOURCE: "--mzid-plugin"}
 
 
 def validate_report(outdir, messages, info):
@@ -47,8 +49,18 @@ def run_pmultiqc(source, files, outdir, excluded, data_source, info, check_cance
         folder = selected.parent
     command = [sys.executable, "-X", "utf8", "-u", str(Path(__file__).with_name("multiqc_runner.py")), PLUGIN_FLAGS[data_source], str(folder),
                "-o", str(outdir), "--filename", "multiqc_report.html", "--no-version-check", "--cl-config", json.dumps(config)]
-    ignored = set(excluded)
-    for current, dirs, _ in os.walk(folder):
+    if data_source == discoverer.SOURCE:
+        selected = discoverer.report_inputs(files)
+        # Do not pre-create _support: MultiQC would suffix both data/report names.
+        file_list = outdir / "selected_inputs.txt"
+        file_list.write_text("\n".join(str(path) for path in selected) + "\n", encoding="utf-8")
+        command[6] = str(file_list)
+        command.append("--file-list")
+        info["pmultiqc_selected_files"] = " | ".join(str(path) for path in selected)
+    # A PD file-list already has an exact scope. Windows CLI wildcard expansion
+    # in --ignore arguments would otherwise introduce extra positional paths.
+    ignored = set() if data_source == discoverer.SOURCE else set(excluded)
+    for current, dirs, _ in (() if data_source == discoverer.SOURCE else os.walk(folder)):
         current = Path(current)
         for name in list(dirs):
             path = (current / name).resolve()
@@ -111,6 +123,9 @@ def run_pmultiqc(source, files, outdir, excluded, data_source, info, check_cance
     # These are auxiliary exports, not files the HTML needs at its top level.
     support = outdir / "_support"
     support.mkdir(exist_ok=True)
+    if data_source == discoverer.SOURCE:
+        file_list.replace(support / file_list.name)
+        info["pmultiqc_file_list_archive"] = str(support / file_list.name)
     for name in ("diann_qc.mzQC", "maxquant_qc.mzQC", "experimental_design.tsv"):
         artifact = outdir / name
         if artifact.is_file():

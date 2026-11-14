@@ -1,8 +1,17 @@
 # ProteomicsQC GUI
 
-Windows desktop QC for FragPipe, DIA-NN and MaxQuant, with compact Excel summaries and optional PMultiQC HTML reports.
+Windows desktop QC for FragPipe, DIA-NN, MaxQuant and Proteome Discoverer, with compact Excel summaries and optional PMultiQC HTML reports.
 
-รุ่น 0.4.0 สำหรับ Windows 10/11 x64 — โปรแกรมสรุป QC ของตารางผลวิเคราะห์ ไม่ประมวลผล RAW เพื่อค้นหา peptide/protein เอง
+รุ่น 0.5.0 สำหรับ Windows 10/11 x64 — โปรแกรมสรุป QC ของผลวิเคราะห์ ไม่ประมวลผล RAW เพื่อค้นหา peptide/protein เอง
+
+## สิ่งใหม่ใน 0.5.0
+
+- เพิ่ม Data source **Proteome Discoverer**: อ่าน `.mzid` เพื่อสรุป identification ใน Excel
+- HTML ใช้ `.mzid` กับคู่ `.mzML` หรือ `.mgf` ชื่อฐานเดียวกันในโฟลเดอร์เดียวกัน
+- แยกจำนวน identification items ทุก rank/threshold ออกจาก rank 1 ที่ผ่านเกณฑ์
+- ตรวจคู่ไฟล์และเก็บ Excel ไว้เมื่อ HTML ไม่พร้อม มีตัวอย่างจำลอง PD ใน Examples/SYNTHETIC_ONLY
+- ยังไม่อ่าน `.pdResult` หรือตาราง Excel abundance ของ PD และยังไม่ทดสอบ mzML จริงขนาด 2 GB
+- คู่มือ PDF 0.4.0 อธิบายหน้าจอพื้นฐาน ส่วนที่เพิ่มใหม่ดู `docs/Proteome_Discoverer.md`
 
 ## สิ่งใหม่ใน 0.4.0
 
@@ -38,6 +47,11 @@ Windows desktop QC for FragPipe, DIA-NN and MaxQuant, with compact Excel summari
 | FragPipe | เลือก PSM TSV ชื่อใดก็ได้ เช่น psm_2.tsv; เลือกโฟลเดอร์จะค้นหา psm*.tsv; peptide/protein TSV ทีละไฟล์ | PSM / peptide / protein identifiers ตามโหมด |
 | DIA-NN | main report .parquet หรือ .tsv; เริ่มพัฒนาจากคอลัมน์ 2.2.0 | precursor observations ต่อ run, unique precursors, peptide sequences, protein-group strings |
 | MaxQuant | โฟลเดอร์ txt หรือโฟลเดอร์ที่มี txt; ต้องมี evidence.txt, msms.txt, proteinGroups.txt | evidence features, MS/MS PSM rows และ protein-group rows แยกกัน |
+| Proteome Discoverer | `.mzid` ทีละไฟล์ หรือโฟลเดอร์ที่มี `.mzid`; HTML ใช้คู่ `.mzML`/`.mgf` ชื่อฐานเดียวกันในโฟลเดอร์เดียวกัน | identification items ทุก rank/threshold; แยกจำนวน rank 1 ที่ผ่านเกณฑ์ และ protein accessions ที่ถูกอ้างอิง |
+
+Proteome Discoverer เพิ่มตั้งแต่รุ่น `0.5.0`
+รองรับ Excel สรุป identification จาก `.mzid` และ PMultiQC HTML จากไฟล์สเปกตรัมที่จับคู่
+ยังไม่อ่านตาราง Excel abundance ของ PD รายละเอียดอยู่ใน `docs/Proteome_Discoverer.md`
 
 MaxQuant จะอ่าน summary.txt, parameters.txt และ msmsScans.txt เพิ่มเมื่อมี
 DIA-NN ต้องเป็น main report ไม่ใช่ pg_matrix, spectral library หรือ site report; หากมีหลาย main report ให้เลือกไฟล์โดยตรง

@@ -23,6 +23,9 @@ def copy_manual(application):
         destination = application / "docs"
         destination.mkdir(exist_ok=True)
         shutil.copy2(manual, destination / manual.name)
+    destination = application / "docs"
+    destination.mkdir(exist_ok=True)
+    shutil.copy2(ROOT / "docs" / "Proteome_Discoverer.md", destination / "Proteome_Discoverer.md")
 
 
 def build(destination):
@@ -50,6 +53,7 @@ def build(destination):
         shutil.copy2(ROOT / name, application / name)
     copy_manual(application)
     shutil.copy2(ROOT / "README.md", destination / "README.md")
+    shutil.copy2(ROOT / "docs" / "Proteome_Discoverer.md", destination / "Proteome_Discoverer.md")
     shutil.copytree(ROOT / "sample_data" / "synthetic_qc", destination / "Examples" / "SYNTHETIC_ONLY")
     compiler = Path(r"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe")
     subprocess.run([str(compiler), "/nologo", "/target:winexe", "/platform:x64", "/optimize+",
@@ -63,7 +67,7 @@ def build(destination):
         "CPython license: _internal/python/LICENSE.txt\n"
         "Package licenses and notices: _internal/python/Lib/site-packages/*.dist-info/\n"
         "The bundled environment and versions are listed in _internal/environment.json.\n"
-        "Synthetic examples are not experimental results and are not outputs of a DIA-NN or MaxQuant execution.\n",
+        "Synthetic examples are not experimental results and are not outputs of DIA-NN, MaxQuant or Proteome Discoverer executions.\n",
         encoding="utf-8")
     return destination
 
