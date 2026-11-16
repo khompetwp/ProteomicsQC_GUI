@@ -1,92 +1,64 @@
 # ProteomicsQC GUI
 
-Windows desktop QC for FragPipe, DIA-NN, MaxQuant and Proteome Discoverer, with compact Excel summaries and optional PMultiQC HTML reports.
+โปรแกรม QC บน Windows สำหรับสรุปตารางผลจาก **FragPipe, DIA-NN, MaxQuant และ Proteome Discoverer** เป็น Excel และเลือกสร้างรายงาน HTML ด้วย PMultiQC ได้
 
-รุ่น 0.5.0 สำหรับ Windows 10/11 x64 — โปรแกรมสรุป QC ของผลวิเคราะห์ ไม่ประมวลผล RAW เพื่อค้นหา peptide/protein เอง
+เวอร์ชัน `0.5.0` รองรับ Windows 10/11 x64 โปรแกรมอ่านผลวิเคราะห์ที่มีอยู่แล้วและ **ไม่ได้ค้นหา peptide/protein จาก RAW data เอง**
 
-## สิ่งใหม่ใน 0.5.0
+## รองรับข้อมูลอะไรบ้าง
 
-- เพิ่ม Data source **Proteome Discoverer**: อ่าน `.mzid` เพื่อสรุป identification ใน Excel
-- HTML ใช้ `.mzid` กับคู่ `.mzML` หรือ `.mgf` ชื่อฐานเดียวกันในโฟลเดอร์เดียวกัน
-- แยกจำนวน identification items ทุก rank/threshold ออกจาก rank 1 ที่ผ่านเกณฑ์
-- ตรวจคู่ไฟล์และเก็บ Excel ไว้เมื่อ HTML ไม่พร้อม มีตัวอย่างจำลอง PD ใน Examples/SYNTHETIC_ONLY
-- ยังไม่อ่าน `.pdResult` หรือตาราง Excel abundance ของ PD และยังไม่ทดสอบ mzML จริงขนาด 2 GB
-- คู่มือ PDF 0.4.0 อธิบายหน้าจอพื้นฐาน ส่วนที่เพิ่มใหม่ดู `docs/Proteome_Discoverer.md`
-
-
-## ใช้ชุด portable โดยไม่ติดตั้ง
-
-แตก ZIP ทั้งหมด แล้วเปิด `ProteomicsQC.exe` โดยเก็บ `_internal` ไว้ข้างกัน ไม่ต้องติดตั้ง Python หรือแก้ PATH
-มี private Python 3.13 และ dependencies ของโปรแกรมรวมอยู่แล้ว ตัว launcher ใช้ .NET Framework 4.x ของ Windows
-ตัวอย่างใน `Examples/SYNTHETIC_ONLY` เป็นข้อมูลจำลองเท่านั้น
-
-หากใช้ Setup.exe จะติดตั้งสำหรับผู้ใช้ปัจจุบัน สร้างรายการ Start menu และเลือกสร้าง desktop shortcut ได้
-ถอนการติดตั้งได้ผ่าน Windows Apps โปรแกรมไม่ลบข้อมูลทดลองหรือรายงานที่บันทึกไว้นอกโฟลเดอร์โปรแกรม
-ตัวติดตั้งและ EXE ยังไม่ได้เซ็นดิจิทัล จึงอาจแสดง Unknown publisher
-
-## วิธีใช้งาน
-
-1. เลือก **Data source** ให้ตรงกับโปรแกรมต้นทาง
-2. เลือกไฟล์หรือโฟลเดอร์ผลวิเคราะห์ และ Data level
-3. เลือก Output parent folder ที่เขียนได้; ปล่อยว่างใช้ ResultQC ใกล้ input แล้วตั้ง Report folder name ได้ เช่น `HeLa QC รอบสอง`; เว้นชื่อว่างใช้ชื่ออัตโนมัติ ชื่อซ้ำจะแจ้งเตือนโดยไม่เขียนทับ
-4. ติ๊กสร้าง HTML หากต้องการ แล้วกด Run QC
-5. เปิด Excel/HTML จากปุ่มในโปรแกรม หรือกด Cancel เพื่อขอยกเลิก
-
-| Data source | Input | หน่วยที่โปรแกรมนับ |
+| Data source | Input หลัก | สิ่งที่สรุป |
 |---|---|---|
-| FragPipe | เลือก PSM TSV ชื่อใดก็ได้ เช่น psm_2.tsv; เลือกโฟลเดอร์จะค้นหา psm*.tsv; peptide/protein TSV ทีละไฟล์ | PSM / peptide / protein identifiers ตามโหมด |
-| DIA-NN | main report .parquet หรือ .tsv; เริ่มพัฒนาจากคอลัมน์ 2.2.0 | precursor observations ต่อ run, unique precursors, peptide sequences, protein-group strings |
-| MaxQuant | โฟลเดอร์ txt หรือโฟลเดอร์ที่มี txt; ต้องมี evidence.txt, msms.txt, proteinGroups.txt | evidence features, MS/MS PSM rows และ protein-group rows แยกกัน |
-| Proteome Discoverer | `.mzid` ทีละไฟล์ หรือโฟลเดอร์ที่มี `.mzid`; HTML ใช้คู่ `.mzML`/`.mgf` ชื่อฐานเดียวกันในโฟลเดอร์เดียวกัน | identification items ทุก rank/threshold; แยกจำนวน rank 1 ที่ผ่านเกณฑ์ และ protein accessions ที่ถูกอ้างอิง |
+| FragPipe | PSM TSV ชื่อใดก็ได้ หรือโฟลเดอร์ที่มี `psm*.tsv`; Peptide/Protein ใช้ TSV ทีละไฟล์ | PSM, peptide และ protein identifiers ตามโหมด |
+| DIA-NN | main report `.parquet` หรือ `.tsv` | precursor observations ต่อ run, unique precursors, peptide sequences และ protein-group strings |
+| MaxQuant | โฟลเดอร์ `txt` ที่มี `evidence.txt`, `msms.txt`, `proteinGroups.txt` | evidence features, MS/MS PSM rows และ protein-group rows |
+| Proteome Discoverer | `.mzid` หรือโฟลเดอร์ที่มี `.mzid`; HTML ต้องมี `.mzML`/`.mgf` ชื่อฐานเดียวกัน | identification items ทุก rank/threshold, rank 1 ที่ผ่านเกณฑ์ และ referenced protein accessions |
 
-Proteome Discoverer เพิ่มตั้งแต่รุ่น `0.5.0`
-รองรับ Excel สรุป identification จาก `.mzid` และ PMultiQC HTML จากไฟล์สเปกตรัมที่จับคู่
-ยังไม่อ่านตาราง Excel abundance ของ PD รายละเอียดอยู่ใน `docs/Proteome_Discoverer.md`
+Proteome Discoverer รองรับ identification จาก `.mzid` แต่ยังไม่อ่าน `.pdResult` หรือตาราง abundance ของ PD ดูรายละเอียดที่ [docs/Proteome_Discoverer.md](docs/Proteome_Discoverer.md)
 
-MaxQuant จะอ่าน summary.txt, parameters.txt และ msmsScans.txt เพิ่มเมื่อมี
-DIA-NN ต้องเป็น main report ไม่ใช่ pg_matrix, spectral library หรือ site report; หากมีหลาย main report ให้เลือกไฟล์โดยตรง
-เวอร์ชัน MaxQuant เป้าหมายยังไม่ทราบ ต้องยืนยันอีกครั้งกับไฟล์จริง
+## วิธีใช้
 
-## ผลลัพธ์ต่อรอบ
+1. เลือก **Data source**, input และ Data level ให้ตรงกับโปรแกรมต้นทาง
+2. เลือก Output parent folder และตั้ง Report folder name หรือปล่อยว่างเพื่อสร้างชื่ออัตโนมัติ
+3. เลือก **Create PMultiQC HTML report** หากต้องการ HTML
+4. กด **Run QC** แล้วเปิด Excel, HTML หรือ results folder จากโปรแกรม
+
+ชื่อโฟลเดอร์ผลลัพธ์ซ้ำจะถูกปฏิเสธ โปรแกรมไม่เขียนทับงานเดิม การกด Cancel จะรอการอ่านตารางปัจจุบันจบ แต่สามารถหยุด subprocess ที่สร้าง HTML ระหว่างรันได้
+
+### Portable และตัวติดตั้ง
+
+- Portable: แตก ZIP ทั้งหมดแล้วเปิด `ProteomicsQC.exe`; ต้องเก็บ `_internal` ไว้ข้างกัน
+- Setup: ติดตั้งสำหรับผู้ใช้ปัจจุบัน สร้าง Start menu และเลือก desktop shortcut ได้
+- ไม่ต้องติดตั้ง Python หรือแก้ PATH เพราะแพ็กเกจมี private Python 3.13 และ dependencies
+- EXE/Setup ยังไม่ได้เซ็นดิจิทัล จึงอาจแสดง `Unknown publisher`
+- ตัวอย่างใน `Examples/SYNTHETIC_ONLY` เป็นข้อมูลจำลอง ไม่ใช่ผลทดลอง
+
+## ผลลัพธ์
 
 ```text
 qc_วันเวลา_รหัส/
   QC_summary.xlsx
   multiqc_report.html     เมื่อเลือกสร้างและรายงานสำเร็จ
-  _support/               ข้อมูลประกอบ PMultiQC รวม mzQC เมื่อ plugin สร้าง
+  _support/               ข้อมูลประกอบ PMultiQC
   processing.log          เมื่อมีปัญหา รายงานไม่ครบ หรือยกเลิก
 ```
 
-Excel มี Summary, By run, Numeric audit, Missing values, Input files และ Run info
-รวมประวัติ เวลา เวอร์ชัน dependencies ขอบเขต input คำสั่งที่ใช้ และสถานะใน Run info
-GUI แสดง 1,000 แถวแรกต่อแท็บ แต่ Excel เก็บตารางสรุปทั้งหมด
-จำนวน unique ต่อ run/ไฟล์ไม่ควรนำมาบวกแล้วเรียกว่า unique ของทั้งงาน
+Excel มีชีต Summary, By run, Numeric audit, Missing values, Input files และ Run info พร้อมเวอร์ชัน dependency, input scope, คำสั่งและสถานะการประมวลผล GUI แสดงตัวอย่าง 1,000 แถวแรก แต่ workbook เก็บตารางสรุปทั้งหมด
 
-## ไม่มีการกรองเพิ่มเติมของโปรแกรม
+## หลักการนับและข้อควรระวัง
 
-โปรแกรมไม่เขียนทับ input ไม่กรอง q-value/FDR ไม่ตัด decoy/contaminant ไม่ลบแถวซ้ำ ไม่เติมค่าว่าง และไม่ renormalise
-ข้อความ NA เป็นข้อความตามเดิม; ช่องว่างถือเป็น missing; ค่าตัวเลขผิดรูปแบบ/infinity ไม่ใช้ในสถิติตัวเลขแต่ยังนับแถวนั้น
-ไฟล์ต้นทางอาจผ่านการกรองหรือ normalization มาแล้วตามการตั้งค่าของ FragPipe/DIA-NN/MaxQuant
-ไม่มีการตัดสิน PASS/FAIL อัตโนมัติ
+- ไม่เขียนทับ input และไม่เพิ่มการกรอง q-value/FDR, decoy, contaminant หรือแถวซ้ำ
+- ไม่เติม missing values และไม่ renormalise; `NA` แบบข้อความยังเป็นข้อความเดิม
+- ค่าตัวเลขผิดรูปแบบหรือ infinity ไม่ใช้ในสถิติตัวเลข แต่แถวยังถูกนับ
+- ไม่มีการตัดสิน PASS/FAIL ทางวิทยาศาสตร์โดยอัตโนมัติ
+- อย่าบวก unique counts ระหว่าง run/ไฟล์แล้วเรียกว่า unique ของทั้งงาน
+- PMultiQC มีกฎกรองและวิธีคำนวณของตัวเอง ตัวเลขใน HTML จึงอาจต่างจาก Excel ซึ่งนับทุกแถวของ input
+- หาก HTML ล้มเหลวหรืออ่านได้ไม่ครบ Excel จะยังอยู่ โดยงานมีสถานะ `partial`; ให้ตรวจ Log และ `processing.log`
 
-**PMultiQC มีวิธีคำนวณและการกรองภายในของมันเอง** เช่น ตัด decoy/reverse และแยก transferred evidence ตามกราฟ
-จึงอาจมีตัวเลขต่างจาก Excel ซึ่งนับทุกแถวของ input โปรแกรมตรวจว่ารายงานมี plot data และตรวจข้อความ plugin ล้มเหลว
-หากสร้าง HTML ได้แต่บางส่วนอ่านไม่สำเร็จจะรายงาน partial; ควรตรวจ Log ก่อนนำรายงานไปใช้
+PMultiQC `0.0.48` มี compatibility shim สำหรับข้อความ categorical ของ DIA-NN และ Protein group IDs แบบตัวเลขของ MaxQuant โดยแก้ชนิดข้อมูลในหน่วยความจำเท่านั้น ไม่เปลี่ยน input หรือเพิ่มตัวกรอง ต้องทดสอบ shim ใหม่เมื่ออัปเกรด PMultiQC
 
-FragPipe PMultiQC ใช้ PSM ชุดเดียวกับที่เลือก/ค้นพบสำหรับ Excel QC โดยส่ง path ต้นฉบับให้ worker รองรับชื่อไฟล์กำหนดเอง ไม่เปลี่ยนชื่อหรือคัดลอกข้อมูล ส่วนไฟล์ประกอบ เช่น combined_protein.tsv ยังสแกนจากโฟลเดอร์ input
-DIA-NN ใช้ main report ที่เลือก ส่วน log/metadata อาจอ่านจากโฟลเดอร์เดียวกัน
-MaxQuant ใช้โฟลเดอร์ที่มีชุดตารางที่ตรวจพบ
-โฟลเดอร์ผลของโปรแกรมและ _support จะถูกข้ามในการสแกน
+## พัฒนาจาก source
 
-### ความเข้ากันได้ PMultiQC 0.0.48
-
-worker มี compatibility shim เฉพาะเวอร์ชันนี้: แปลงคอลัมน์ข้อความ DIA-NN ที่เก็บแบบ categorical และ MaxQuant Protein group IDs แบบตัวเลขเป็นชนิดข้อความในหน่วยความจำ
-เพื่อหลีกเลี่ยงข้อผิดพลาดของ plugin ไม่มีการแก้ไฟล์แพ็กเกจ ไม่มีการเปลี่ยนค่า input และไม่เพิ่มตัวกรอง
-เมื่ออัปเกรด PMultiQC ต้องทดสอบใหม่ shim ไม่ทำงานกับเวอร์ชันอื่น
-
-## ติดตั้งจาก source เพื่อพัฒนา
-
-ดาวน์โหลด repository ทั้งชุด ไม่ใช่เฉพาะไฟล์ .py สองไฟล์ ใช้ Python 3.13 x64 พร้อม Tcl/Tk
+ใช้ Python 3.13 x64 พร้อม Tcl/Tk และดาวน์โหลด repository ทั้งชุด:
 
 ```powershell
 py -3.13 -m venv .venv
@@ -94,47 +66,30 @@ py -3.13 -m venv .venv
 .\.venv\Scripts\python.exe msqc_gui.py
 ```
 
-สร้าง venv ใหม่บนแต่ละเครื่อง requirements.txt pin dependencies หลัก ส่วน portable มีรายการเวอร์ชันทั้งหมดใน _internal/environment.json
+ตัวอย่าง CLI:
 
 ```powershell
 .\.venv\Scripts\python.exe msqc2.py --source FragPipe --input data --output results
-.\.venv\Scripts\python.exe msqc2.py --source FragPipe --input psm_2.tsv --output results --report-name "HeLa QC รอบสอง"
 .\.venv\Scripts\python.exe msqc2.py --source DIA-NN --input report.parquet --output results
 .\.venv\Scripts\python.exe msqc2.py --source MaxQuant --input path_to_txt --output results
+.\.venv\Scripts\python.exe msqc2.py --source "Proteome Discoverer" --input sample.mzid --output results
 ```
 
-เพิ่ม `--skip-multiqc` เพื่อสร้าง Excel เท่านั้น
-Exit codes: 0 สำเร็จ, 1 Excel สำเร็จแต่ HTML ล้มเหลว/ไม่ครบ, 2 QC ล้มเหลว, 130 ผู้ใช้ยกเลิก
-Cancel จะรอการอ่านตารางปัจจุบันจบก่อน แต่ยกเลิก subprocess สร้างรายงานได้ระหว่างรัน
+เพิ่ม `--skip-multiqc` เพื่อสร้าง Excel เท่านั้น Exit codes: `0` สำเร็จ, `1` Excel สำเร็จแต่ HTML ล้มเหลว/ไม่ครบ, `2` QC ล้มเหลว, `130` ผู้ใช้ยกเลิก
 
-## สร้าง portable และตัวติดตั้ง
+### ทดสอบและ build
 
 ```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
 .\.venv\Scripts\python.exe tools/generate_synthetic_qc.py --output sample_data/synthetic_qc
 .\.venv\Scripts\python.exe tools/build_windows.py
 ```
 
-builder คัดลอก private CPython/Tcl/Tk และ site-packages จาก venv ที่ใช้ build รวม package metadata, plugin assets และ DLLs
-จึงมีขนาดค่อนข้างใหญ่ แต่หลีกเลี่ยงการพึ่ง Python ในเครื่องปลายทาง ไม่เขียนทับโฟลเดอร์ build เดิม
-ต้องมี C# compiler ของ .NET Framework สำหรับสร้าง launcher บน Windows
-ใช้ Inno Setup compile packaging/ProteomicsQC.iss เพื่อสร้าง Setup.exe จาก portable ที่ทดสอบแล้ว
+ข้อมูล DIA-NN/MaxQuant ใน regression suite เป็น synthetic fixtures และยังต้องยืนยันกับไฟล์จริงหลายเวอร์ชัน การอ่านตารางใช้ RAM ตามขนาดไฟล์ และยังไม่ได้ทดสอบ mzML จริงขนาด 2 GB
 
-## ทดสอบและข้อจำกัด
+## License และโครงการภายนอก
 
-```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
-```
+ProteomicsQC เผยแพร่ภายใต้ [GNU GPL version 3 only](LICENSE) ดูวิธีเข้าถึง source ของแต่ละ release ที่ [SOURCE_CODE.md](SOURCE_CODE.md) และรายการ dependency/licensing ที่ [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt)
 
-ชุด synthetic มี 6 runs และ 678 precursor/evidence rows; ทดสอบข้ามไฟล์ด้วย manifest ไม่ใช่ค่าจากการรัน DIA-NN/MaxQuant จริง
-สร้างด้วย tools/generate_synthetic_qc.py จากชื่อคอลัมน์ในเอกสาร DIA-NN ณ วันออก 2.2.0 และตารางมาตรฐาน MaxQuant
-ยังต้องตรวจไฟล์จริงของ DIA-NN/MaxQuant และทดสอบบน Windows ที่ไม่มี Python
-การอ่านตารางยังใช้ RAM ตามขนาดไฟล์ จึงต้องทดสอบข้อมูลขนาดจริงบนเครื่องปลายทาง
+PMultiQC และ MultiQC เป็นโครงการภายนอก ProteomicsQC เป็นโครงการอิสระและไม่ได้รับการรับรองโดยผู้พัฒนา PMultiQC, MultiQC, FragPipe, DIA-NN, MaxQuant หรือ Proteome Discoverer
 
-โปรแกรมเก็บประวัติ path/size/mtime ของ input โดยไม่ทำสำเนาและไม่คำนวณ checksum ระหว่างงานปกติ
-ข้อมูลทดลองและผล QC ไม่ต้องอัปโหลด GitHub; .gitignore ข้ามข้อมูลและ build outputs
-
-หลังแพ็กแล้วพัฒนาต่อได้: แก้ source → ทดสอบ → build portable/Setup รุ่นใหม่ ไม่แก้ .exe โดยตรง
-
-## Preview 2
-
-Report workers explicitly use UTF-8 so Thai paths and custom report filenames can be validated correctly on Thai Windows locales.

@@ -28,6 +28,17 @@ def copy_manual(application):
     shutil.copy2(ROOT / "docs" / "Proteome_Discoverer.md", destination / "Proteome_Discoverer.md")
 
 
+def copy_legal_documents(destination):
+    """Keep licensing and source-access information visible in every build."""
+    for name in ("LICENSE", "SOURCE_CODE.md", "THIRD_PARTY_NOTICES.txt"):
+        shutil.copy2(ROOT / name, destination / name)
+    licenses = destination / "licenses"
+    shutil.copytree(ROOT / "licenses", licenses, dirs_exist_ok=True)
+    python_license = destination / "_internal" / "python" / "LICENSE.txt"
+    if python_license.is_file():
+        shutil.copy2(python_license, licenses / "CPython-License.txt")
+
+
 def build(destination):
     destination = destination.resolve()
     if destination.exists():
@@ -54,6 +65,7 @@ def build(destination):
     copy_manual(application)
     shutil.copy2(ROOT / "README.md", destination / "README.md")
     shutil.copy2(ROOT / "docs" / "Proteome_Discoverer.md", destination / "Proteome_Discoverer.md")
+    copy_legal_documents(destination)
     shutil.copytree(ROOT / "sample_data" / "synthetic_qc", destination / "Examples" / "SYNTHETIC_ONLY")
     compiler = Path(r"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe")
     subprocess.run([str(compiler), "/nologo", "/target:winexe", "/platform:x64", "/optimize+",
@@ -62,13 +74,6 @@ def build(destination):
     versions = {dist.metadata["Name"]: dist.version for dist in metadata.distributions() if dist.metadata.get("Name")}
     (destination / "_internal" / "environment.json").write_text(json.dumps({"python": sys.version, "packages": versions}, indent=2), encoding="utf-8")
     (destination / "_internal" / "requirements-lock.txt").write_text("\n".join(f"{name}=={value}" for name, value in sorted(versions.items())) + "\n", encoding="utf-8")
-    (destination / "THIRD_PARTY_NOTICES.txt").write_text(
-        "This application redistributes CPython and Python packages.\n"
-        "CPython license: _internal/python/LICENSE.txt\n"
-        "Package licenses and notices: _internal/python/Lib/site-packages/*.dist-info/\n"
-        "The bundled environment and versions are listed in _internal/environment.json.\n"
-        "Synthetic examples are not experimental results and are not outputs of DIA-NN, MaxQuant or Proteome Discoverer executions.\n",
-        encoding="utf-8")
     return destination
 
 
@@ -82,6 +87,7 @@ def refresh_app(destination):
         shutil.copy2(ROOT / name, application / name)
     copy_manual(application)
     shutil.copy2(ROOT / "README.md", destination / "README.md")
+    copy_legal_documents(destination)
     return destination
 
 
@@ -91,3 +97,4 @@ if __name__ == "__main__":
     parser.add_argument("--refresh-app", action="store_true", help="Refresh code/docs in an existing development build; dependencies unchanged")
     args = parser.parse_args()
     print(refresh_app(args.output) if args.refresh_app else build(args.output), flush=True)
+
