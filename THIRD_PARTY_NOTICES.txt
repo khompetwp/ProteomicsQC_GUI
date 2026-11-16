@@ -1,0 +1,36 @@
+ProteomicsQC third-party notices
+================================
+
+ProteomicsQC includes or uses third-party software. Each component remains
+under its own license. Complete package metadata and license files are retained
+in `_internal/python/Lib/site-packages/*.dist-info/` in portable and installed
+builds. Exact bundled versions are recorded in `_internal/environment.json`.
+
+PMultiQC
+  License: MIT
+  Copyright (c) 2025 bigbio/quantms team
+  Source: https://github.com/bigbio/pmultiqc
+  License copy: licenses/PMultiQC-MIT.txt
+
+MultiQC
+  License: GNU General Public License version 3
+  Source: https://github.com/MultiQC/MultiQC
+  License copy: licenses/MultiQC-GPL-3.0.txt
+
+CPython
+  License: Python Software Foundation License and bundled notices
+  Source: https://github.com/python/cpython
+  Portable license copy: licenses/CPython-License.txt
+
+Additional Python dependencies
+  Licenses and notices are stored with their package metadata under
+  `_internal/python/Lib/site-packages/*.dist-info/`.
+
+ProteomicsQC is an independent project. It is not endorsed by the developers
+or owners of PMultiQC, MultiQC, FragPipe, DIA-NN, MaxQuant or Proteome
+Discoverer. Product and project names are used only to identify compatible
+input formats and third-party software.
+
+Synthetic examples bundled with ProteomicsQC are not experimental results and
+are not outputs of DIA-NN, MaxQuant or Proteome Discoverer executions.
+

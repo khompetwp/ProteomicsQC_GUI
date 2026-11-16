@@ -1,0 +1,12 @@
+MultiQC is licensed under the GNU General Public License version 3.
+
+Project: https://github.com/MultiQC/MultiQC
+Copyright and authorship information is retained in the bundled MultiQC
+package metadata.
+
+The complete GNU GPL version 3 license text is provided in the repository root
+as `LICENSE` and in portable/installed builds at both `LICENSE` and the
+MultiQC package metadata path:
+
+`_internal/python/Lib/site-packages/multiqc-*.dist-info/licenses/LICENSE`
+

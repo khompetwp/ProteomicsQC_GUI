@@ -33,6 +33,10 @@ def run(portable, fragpipe=None):
     assert diagnostics["success"] and diagnostics["gui_created"]
     assert diagnostics["application_version"] == VERSION
     assert (portable / "Proteome_Discoverer.md").is_file()
+    for document in ("LICENSE", "SOURCE_CODE.md", "THIRD_PARTY_NOTICES.txt"):
+        assert (portable / document).is_file(), document
+    for license_file in ("PMultiQC-MIT.txt", "MultiQC-GPL-3.0.txt", "CPython-License.txt"):
+        assert (portable / "licenses" / license_file).is_file(), license_file
     private_root = portable / "_internal" / "python"
     assert Path(diagnostics["prefix"]).resolve() == private_root.resolve()
     for package in diagnostics["packages"].values():
@@ -119,3 +123,4 @@ if __name__ == "__main__":
     parser.add_argument("--fragpipe", type=Path)
     args = parser.parse_args()
     run(args.portable.resolve(), args.fragpipe.resolve() if args.fragpipe else None)
+
