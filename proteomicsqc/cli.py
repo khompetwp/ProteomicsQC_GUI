@@ -9,7 +9,7 @@ from .outputs import create_run_directory
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="ProteomicsQC: FragPipe, DIA-NN and MaxQuant table QC")
+    parser = argparse.ArgumentParser(description="ProteomicsQC: FragPipe, DIA-NN, MaxQuant and Proteome Discoverer QC")
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--output", type=Path, default=Path.cwd() / "results")
     parser.add_argument("--source", choices=adapters.SOURCES, default="FragPipe")

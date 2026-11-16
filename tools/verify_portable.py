@@ -24,18 +24,22 @@ def run(portable, fragpipe=None):
     output_root.mkdir(parents=True, exist_ok=True)
     output = Path(tempfile.mkdtemp(prefix="portable_validation_", dir=output_root))
     environment = {**os.environ, "PATH": os.path.join(os.environ["SystemRoot"], "System32"),
-                   "PYTHONHOME": "INVALID_HOST_PYTHON", "PYTHONPATH": "INVALID_HOST_PACKAGES"}
+                   "PYTHONHOME": "INVALID_HOST_PYTHON", "PYTHONPATH": "INVALID_HOST_PACKAGES",
+                   "LOCALAPPDATA": str(output / "isolated_user")}
     check = output / "self_test.json"
     process = subprocess.run([str(launcher), "--self-test", "--output", str(check)], env=environment, timeout=90, check=False)
     assert process.returncode == 0, "EXE startup failed"
     diagnostics = json.loads(check.read_text(encoding="utf-8"))
     assert diagnostics["success"] and diagnostics["gui_created"]
+    assert diagnostics["application_version"] == VERSION
+    assert (portable / "Proteome_Discoverer.md").is_file()
     private_root = portable / "_internal" / "python"
     assert Path(diagnostics["prefix"]).resolve() == private_root.resolve()
     for package in diagnostics["packages"].values():
         assert private_root.resolve() in Path(package["path"]).resolve().parents, package
     cases = [("DIA-NN", "DIA-NN", portable / "Examples" / "SYNTHETIC_ONLY" / "diann_2_2_0" / "report.parquet"),
-             ("MaxQuant", "MaxQuant", portable / "Examples" / "SYNTHETIC_ONLY" / "maxquant_unspecified")]
+             ("MaxQuant", "MaxQuant", portable / "Examples" / "SYNTHETIC_ONLY" / "maxquant_unspecified"),
+             ("ProteomeDiscoverer", "Proteome Discoverer", portable / "Examples" / "SYNTHETIC_ONLY" / "proteome_discoverer")]
     if fragpipe:
         cases.append(("FragPipe", "FragPipe", fragpipe))
         for filename in ("psm_2.tsv", "HeLa รอบสอง.tsv"):
@@ -68,6 +72,11 @@ def run(portable, fragpipe=None):
         assert result.returncode == 0, (source, history.get("error"), folder)
         assert history["status"] == "complete", history
         assert history["pmultiqc_plot_count"] > 0
+        if source == "Proteome Discoverer":
+            row = pd.read_excel(book, sheet_name="Summary").iloc[0]
+            assert row.psm_items == 24 and row.rank1_passing_items == 24
+            assert row.unique_peptide_sequences == 6 and row.referenced_protein_accessions == 3
+            assert len((folder / "_support" / "selected_inputs.txt").read_text(encoding="utf-8").splitlines()) == 2
         assert sorted(path.name for path in folder.iterdir()) == ["QC_summary.xlsx", "_support", "multiqc_report.html"]
         if digest:
             assert hashlib.sha256(path.read_bytes()).hexdigest() == digest

@@ -6,6 +6,8 @@ from . import adapters
 
 def check_input(source, data_source, level, excluded=(), html=False):
     files = adapters.locate_inputs(Path(source), data_source, level, excluded)
+    if data_source == adapters.discoverer.SOURCE:
+        return files, adapters.discoverer.preflight(files, html)
     warnings = []
     for path in files:
         if data_source == "FragPipe":
