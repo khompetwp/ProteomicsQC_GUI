@@ -13,16 +13,6 @@ Windows desktop QC for FragPipe, DIA-NN, MaxQuant and Proteome Discoverer, with 
 - ยังไม่อ่าน `.pdResult` หรือตาราง Excel abundance ของ PD และยังไม่ทดสอบ mzML จริงขนาด 2 GB
 - คู่มือ PDF 0.4.0 อธิบายหน้าจอพื้นฐาน ส่วนที่เพิ่มใหม่ดู `docs/Proteome_Discoverer.md`
 
-## สิ่งใหม่ใน 0.4.0
-
-- GUI แบบตั้งค่าด้านบนและตารางเต็มความกว้าง ใช้ ttkbootstrap และโลโก้ Q ชมพู–ฟ้า
-- **Output folder** พร้อมแสดงตำแหน่งรายงานที่จะสร้างจริง
-- **Create PMultiQC HTML report** เปิดเป็นค่าเริ่มต้น; FragPipe Peptide/Protein รองรับ Excel เท่านั้น
-- ตรวจหัวคอลัมน์แบบไม่อ่านข้อมูลทั้งไฟล์ก่อนรัน ข้อความผ่านการตรวจหัวตารางไม่ใช่การผ่านเกณฑ์คุณภาพทางวิทยาศาสตร์
-- ตาราง Summary อ่านง่ายขึ้นและแสดงตัวอย่าง By run 6 run แรก ใช้ค่าจริงจาก workbook โดยไม่เปลี่ยนวิธีนับ
-- Help / About เปิดคู่มือ PDF ที่รวมในโปรแกรม; แท็บ Log มีปุ่ม Copy log / error
-- จำโฟลเดอร์ล่าสุดไว้ใน `%LOCALAPPDATA%\ProteomicsQC\settings.json` เพียงไฟล์เดียว ไม่เก็บเนื้อหา input และไม่จำการปิด HTML ข้ามการเปิดโปรแกรม
-- อัปเกรดโดยปิดโปรแกรมแล้วรัน Setup ใหม่ในตำแหน่งเดิม ไม่ต้องถอนรุ่นเดิม ผล QC ควรเก็บนอกโฟลเดอร์ติดตั้ง
 
 ## ใช้ชุด portable โดยไม่ติดตั้ง
 
