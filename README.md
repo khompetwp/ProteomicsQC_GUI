@@ -4,6 +4,8 @@
 
 เวอร์ชัน `0.5.1` รองรับ Windows 10/11 x64 โปรแกรมอ่านผลวิเคราะห์ที่มีอยู่แล้วและ **ไม่ได้ค้นหา peptide/protein จาก RAW data เอง**
 
+![หน้าจอหลักของ ProteomicsQC ขณะเลือก FragPipe และระดับ PSM](docs/proteomicsqc-gui.png)
+
 ## รองรับข้อมูลอะไรบ้าง
 
 | Data source | Input หลัก | สิ่งที่สรุป |
