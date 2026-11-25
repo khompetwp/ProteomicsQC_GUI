@@ -1,0 +1,232 @@
+{
+  "synthetic": true,
+  "seed": 20261114,
+  "spectra_total": 48,
+  "ms1": 12,
+  "ms2": 36,
+  "accepted_rank1_psms": 24,
+  "ms2_without_identification": 12,
+  "unique_sequences": 6,
+  "protein_accessions": 3,
+  "identification_rate_percent": 66.66666666666667,
+  "note": "All peaks, scores, sequences and assignments are synthetic. Peaks are not a physical fragmentation model.",
+  "scan_truth": [
+    {
+      "scan_id": "scan=2",
+      "ms_level": 2,
+      "retention_time_seconds": 11,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=3",
+      "ms_level": 2,
+      "retention_time_seconds": 12,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=4",
+      "ms_level": 2,
+      "retention_time_seconds": 13,
+      "accepted_rank1": false
+    },
+    {
+      "scan_id": "scan=6",
+      "ms_level": 2,
+      "retention_time_seconds": 21,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=7",
+      "ms_level": 2,
+      "retention_time_seconds": 22,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=8",
+      "ms_level": 2,
+      "retention_time_seconds": 23,
+      "accepted_rank1": false
+    },
+    {
+      "scan_id": "scan=10",
+      "ms_level": 2,
+      "retention_time_seconds": 31,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=11",
+      "ms_level": 2,
+      "retention_time_seconds": 32,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=12",
+      "ms_level": 2,
+      "retention_time_seconds": 33,
+      "accepted_rank1": false
+    },
+    {
+      "scan_id": "scan=14",
+      "ms_level": 2,
+      "retention_time_seconds": 41,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=15",
+      "ms_level": 2,
+      "retention_time_seconds": 42,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=16",
+      "ms_level": 2,
+      "retention_time_seconds": 43,
+      "accepted_rank1": false
+    },
+    {
+      "scan_id": "scan=18",
+      "ms_level": 2,
+      "retention_time_seconds": 51,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=19",
+      "ms_level": 2,
+      "retention_time_seconds": 52,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=20",
+      "ms_level": 2,
+      "retention_time_seconds": 53,
+      "accepted_rank1": false
+    },
+    {
+      "scan_id": "scan=22",
+      "ms_level": 2,
+      "retention_time_seconds": 61,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=23",
+      "ms_level": 2,
+      "retention_time_seconds": 62,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=24",
+      "ms_level": 2,
+      "retention_time_seconds": 63,
+      "accepted_rank1": false
+    },
+    {
+      "scan_id": "scan=26",
+      "ms_level": 2,
+      "retention_time_seconds": 71,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=27",
+      "ms_level": 2,
+      "retention_time_seconds": 72,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=28",
+      "ms_level": 2,
+      "retention_time_seconds": 73,
+      "accepted_rank1": false
+    },
+    {
+      "scan_id": "scan=30",
+      "ms_level": 2,
+      "retention_time_seconds": 81,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=31",
+      "ms_level": 2,
+      "retention_time_seconds": 82,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=32",
+      "ms_level": 2,
+      "retention_time_seconds": 83,
+      "accepted_rank1": false
+    },
+    {
+      "scan_id": "scan=34",
+      "ms_level": 2,
+      "retention_time_seconds": 91,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=35",
+      "ms_level": 2,
+      "retention_time_seconds": 92,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=36",
+      "ms_level": 2,
+      "retention_time_seconds": 93,
+      "accepted_rank1": false
+    },
+    {
+      "scan_id": "scan=38",
+      "ms_level": 2,
+      "retention_time_seconds": 101,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=39",
+      "ms_level": 2,
+      "retention_time_seconds": 102,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=40",
+      "ms_level": 2,
+      "retention_time_seconds": 103,
+      "accepted_rank1": false
+    },
+    {
+      "scan_id": "scan=42",
+      "ms_level": 2,
+      "retention_time_seconds": 111,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=43",
+      "ms_level": 2,
+      "retention_time_seconds": 112,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=44",
+      "ms_level": 2,
+      "retention_time_seconds": 113,
+      "accepted_rank1": false
+    },
+    {
+      "scan_id": "scan=46",
+      "ms_level": 2,
+      "retention_time_seconds": 121,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=47",
+      "ms_level": 2,
+      "retention_time_seconds": 122,
+      "accepted_rank1": true
+    },
+    {
+      "scan_id": "scan=48",
+      "ms_level": 2,
+      "retention_time_seconds": 123,
+      "accepted_rank1": false
+    }
+  ],
+  "validation": "Both XSDs passed; arrays decoded; all spectrum references matched; PMultiQC reader returned 24 PSM rows, 6 sequences, 3 accessions."
+}

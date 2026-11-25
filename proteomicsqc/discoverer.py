@@ -3,7 +3,14 @@
 Spectrum arrays are read only by the separate PMultiQC worker, never for Excel.
 """
 from pathlib import Path
+import re
+import math
+from bisect import bisect_left, bisect_right
+from collections import Counter
 import xml.etree.ElementTree as ET
+import xml.sax
+from xml.sax.handler import ContentHandler, feature_namespaces, feature_external_ges
+from xml.sax.handler import LexicalHandler, property_lexical_handler
 
 import pandas as pd
 
@@ -11,6 +18,270 @@ from .tables import missingness, numeric_column, scan_files
 
 SOURCE = "Proteome Discoverer"
 NUMERIC = ("rank", "charge", "experimental_mz", "calculated_mz", "xcorr", "rt_seconds")
+
+_SCAN_ID = re.compile(r"(?:controllerType=\d+ controllerNumber=\d+ )?scan=(\d+)")
+
+
+def scan_number(value):
+    """Recognize only documented scan-only/Thermo forms; never guess index IDs."""
+    match = _SCAN_ID.fullmatch(str(value))
+    return int(match.group(1)) if match else None
+
+
+def _positive_number(value):
+    try:
+        value = float(value)
+        return value if math.isfinite(value) and value > 0 else None
+    except (ValueError, TypeError):
+        return None
+
+
+def _seconds(value, unit, name="", *, unitless_minutes=False):
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(value) or value < 0:
+        return None
+    if unit == "UO:0000010" or name.lower() in ("second", "seconds"):
+        return value
+    if unit == "UO:0000031" or name.lower() in ("minute", "minutes"):
+        return value * 60
+    if not unit and not name and unitless_minutes:
+        return value * 60
+    return None
+
+
+def _stream_xml(path, handler, check_cancel):
+    parser = xml.sax.make_parser()
+    parser.setFeature(feature_namespaces, True)
+    parser.setFeature(feature_external_ges, False)
+    parser.setContentHandler(handler)
+    if isinstance(handler, LexicalHandler):
+        parser.setProperty(property_lexical_handler, handler)
+    with Path(path).open("rb") as stream:
+        for chunk in iter(lambda: stream.read(64 * 1024), b""):
+            check_cancel()
+            parser.feed(chunk)
+    parser.close()
+
+
+def mzml_ms2_metadata(path, check_cancel=lambda: None):
+    """Stream metadata without decoding or retaining binary array text.
+
+    This makes one sequential pass through the file. The memory used for the
+    index scales with spectrum IDs, rather than the size of the peak arrays.
+    """
+    class Handler(ContentHandler):
+        def __init__(self):
+            super().__init__()
+            self.rows, self.current, self.level, self.valid_root = [], None, None, False
+            self.ions, self.ion = [], None
+
+        def startElementNS(self, name, qname, attrs):
+            tag = name[1]
+            if not self.valid_root:
+                if name[0] != "http://psi.hupo.org/ms/mzml" or tag not in ("mzML", "indexedmzML"):
+                    raise ValueError(f"{path.name}: not an mzML document.")
+                self.valid_root = True
+            if tag == "spectrum":
+                self.current = {"native_id": attrs.get((None, "id")), "rt_seconds": None}
+                self.level, self.ions, self.ion = None, [], None
+                check_cancel()
+            elif tag == "selectedIon" and self.current is not None:
+                self.ion = {"precursor_mz": None, "charge": None}
+            elif tag == "cvParam" and self.current is not None:
+                accession = attrs.get((None, "accession"))
+                value = attrs.get((None, "value"))
+                if accession == "MS:1000511":
+                    self.level = attrs.get((None, "value"))
+                elif accession == "MS:1000016":
+                    self.current["rt_seconds"] = _seconds(value, attrs.get((None, "unitAccession")), attrs.get((None, "unitName"), ""))
+                elif self.ion is not None and accession in ("MS:1000744", "MS:1000041"):
+                    self.ion["precursor_mz" if accession == "MS:1000744" else "charge"] = _positive_number(value)
+
+        def endElementNS(self, name, qname):
+            if name[1] == "selectedIon" and self.ion is not None:
+                self.ions.append(self.ion)
+                self.ion = None
+            elif name[1] == "spectrum":
+                if self.level == "2":
+                    if not self.current["native_id"]:
+                        raise ValueError(f"{path.name}: MS2 spectrum has no native ID.")
+                    # Never silently choose one precursor from a multi-ion record.
+                    self.current.update(self.ions[0] if len(self.ions) == 1 else {"precursor_mz": None, "charge": None})
+                    self.rows.append(self.current)
+                self.current, self.level = None, None
+
+    handler = Handler()
+    _stream_xml(path, handler, check_cancel)
+    if not handler.rows:
+        raise ValueError(f"{path.name}: no MS2 spectrum IDs found.")
+    return handler.rows
+
+
+def mzml_ms2_ids(path, check_cancel=lambda: None):
+    return [row["native_id"] for row in mzml_ms2_metadata(path, check_cancel)]
+
+
+def pd_retention_times(path, check_cancel=lambda: None, *, first_scans=None):
+    """PD-only policy: explicit units first; unitless PD export RT is minutes.
+
+    The policy is recorded in the matching audit. Matching never changes the
+    upstream RT values used by PMultiQC or the Excel summary.
+    """
+    class Handler(ContentHandler, LexicalHandler):
+        def __init__(self):
+            self.current, self.value, self.rows, self.unitless = None, None, {}, set()
+            self.pd_software = False
+            self.pending = None
+            self.sources = set()
+
+        def comment(self, content):
+            self.pending = re.search(r"\bFileId=(\d+)(?:\s*\([^)]*\))?;\s*FirstScan=(\d+)(?=;|\s*$)", content)
+
+        def startElementNS(self, name, qname, attrs):
+            hint, self.pending = self.pending, None
+            if name[1] == "AnalysisSoftware":
+                if "proteome discoverer" in (attrs.get((None, "id"), "") + " " + attrs.get((None, "name"), "")).lower():
+                    self.pd_software = True
+            if name[1] == "cvParam" and attrs.get((None, "accession")) == "MS:1000650":
+                self.pd_software = True
+            if name[1] == "SpectrumIdentificationResult":
+                self.current, self.value = attrs.get((None, "spectrumID")), None
+                if hint and self.pd_software and first_scans is not None:
+                    file_id, number = hint.groups()
+                    self.sources.add((file_id, attrs.get((None, "spectraData_ref"))))
+                    if len(self.sources) > 1:
+                        raise ValueError(f"{path.name}: FirstScan references multiple source files for one mzML pair.")
+                    entry = (file_id, int(number))
+                    if first_scans.setdefault(self.current, entry) != entry:
+                        raise ValueError(f"{path.name}: conflicting FirstScan for {self.current}")
+            elif name[1] == "cvParam" and self.current is not None:
+                if attrs.get((None, "accession")) in ("MS:1000894", "MS:1000016"):
+                    unit, unit_name = attrs.get((None, "unitAccession")), attrs.get((None, "unitName"), "")
+                    if not unit and not unit_name:
+                        self.unitless.add(self.current)
+                    self.value = _seconds(attrs.get((None, "value")), unit, unit_name,
+                                          unitless_minutes=self.pd_software)
+
+        def endElementNS(self, name, qname):
+            self.pending = None
+            if name[1] == "SpectrumIdentificationResult":
+                if self.current in self.rows and self.rows[self.current] != self.value:
+                    raise ValueError(f"{path.name}: inconsistent RT values for {self.current}")
+                self.rows[self.current] = self.value
+                self.current, self.value = None, None
+
+    handler = Handler()
+    _stream_xml(path, handler, check_cancel)
+    return handler.rows, {"unitless_rt_policy": "minutes for identified Proteome Discoverer exports only",
+                          "unitless_spectrum_ids": len(handler.unitless), "pd_software_identified": handler.pd_software}
+
+
+def align_spectrum_ids(frame, metadata_by_run, *, first_scans_by_run=None, rt_tolerance_seconds=0.00006, mz_tolerance_ppm=10):
+    """Map accepted plugin rows to actual native MS2 IDs, never between runs.
+
+    Check explicit PD FirstScan against native scan, RT and charge. With no
+    FirstScan, require a unique RT, precursor m/z and charge match.
+    Repeated PSMs/protein-evidence rows remain repeated; no scientific filtering.
+    """
+    result = frame.copy()
+    audits = []
+    for run, group in frame.groupby("filename", sort=False, dropna=False):
+        metadata = metadata_by_run.get(run, [])
+        hints = (first_scans_by_run or {}).get(run, {})
+        by_scan = {}
+        exact = set()
+        timed = []
+        for record in metadata:
+            native = record["native_id"]
+            if native in exact:
+                raise ValueError(f"{run}: duplicate native MS2 ID: {native}")
+            exact.add(native)
+            if hints:
+                by_scan.setdefault(scan_number(native), []).append(record)
+            rt = record.get("rt_seconds")
+            if rt is not None and math.isfinite(rt) and rt >= 0:
+                timed.append(record)
+        timed.sort(key=lambda r: r["rt_seconds"])
+        times = [r["rt_seconds"] for r in timed]
+        mapping = []
+        # Repeated peptide/protein evidence rows share the same validated result.
+        cache = {}
+        for row in group.to_dict("records"):
+            original = row["spectrumID"]
+            hint = hints.get(original)
+            rt, mz, charge = row.get("pd_rt_seconds"), _positive_number(row.get("experimentalMassToCharge")), _positive_number(row.get("chargeState"))
+            try:
+                rt = float(rt)
+            except (ValueError, TypeError):
+                rt = float("nan")
+            key = (str(original), rt if math.isfinite(rt) else None, mz, charge)
+            if key not in cache:
+                candidates = []
+                reason = "missing_rt_mz_or_charge"
+                selected_mz = None
+                if hint:
+                    candidates = by_scan.get(hint[1], [])
+                    reason = "first_scan_not_found"
+                    if len(candidates) == 1:
+                        candidate = candidates[0]
+                        selected_mz = candidate.get("precursor_mz")
+                        if (candidate.get("rt_seconds") is None or not math.isfinite(rt)
+                                or abs(candidate["rt_seconds"] - rt) > rt_tolerance_seconds
+                                or charge is None or not charge.is_integer() or candidate.get("charge") != charge):
+                            candidates = []
+                            reason = "first_scan_rt_or_charge_mismatch"
+                elif math.isfinite(rt) and rt >= 0 and mz is not None and charge is not None and charge.is_integer():
+                    candidates_rt = timed[bisect_left(times, rt-rt_tolerance_seconds):bisect_right(times, rt+rt_tolerance_seconds)]
+                    candidates = [r for r in candidates_rt
+                                  if _positive_number(r.get("precursor_mz")) is not None
+                                  and _positive_number(r.get("charge")) == charge
+                                  and abs(mz-r["precursor_mz"])/mz*1e6 <= mz_tolerance_ppm]
+                    reason = "rt_not_found" if not candidates_rt else "mz_or_charge_mismatch"
+                if len(candidates) == 1:
+                    target = candidates[0]["native_id"]
+                    # A known controller difference must not be stripped away.
+                    controller = lambda value: re.match(r"controllerType=\d+ controllerNumber=\d+", str(value))
+                    a, b = controller(original), controller(target)
+                    if a and b and a.group() != b.group():
+                        target, reason = None, "controller_mismatch"
+                    else:
+                        reason = "verified_first_scan" if hint else "verified"
+                else:
+                    target = None
+                    if len(candidates) > 1:
+                        reason = "ambiguous_metadata"
+                cache[key] = (target, reason, selected_mz)
+            target, reason, selected_mz = cache[key]
+            mapping.append({"original_id": str(original), "native_id": target, "reason": reason,
+                            "rt_seconds": rt if math.isfinite(rt) else None, "precursor_mz": mz, "charge": charge})
+            if hint:
+                mapping[-1].update(file_id=hint[0], first_scan=hint[1], mzml_precursor_mz=selected_mz,
+                                   abs_mz_difference_ppm=abs(mz-selected_mz)/mz*1e6 if mz and selected_mz else None)
+        source_ids = {}
+        for item in mapping:
+            if item["native_id"] is not None:
+                source_ids.setdefault(item["native_id"], set()).add(item["original_id"])
+        collisions = {native for native, originals in source_ids.items() if len(originals) > 1}
+        for item in mapping:
+            if item["native_id"] in collisions:
+                item.update(native_id=None, reason="multiple_source_ids_for_native_spectrum")
+        matched = sum(item["native_id"] is not None for item in mapping)
+        converted = sum(item["native_id"] is not None and item["native_id"] != item["original_id"] for item in mapping)
+        reasons = Counter(item["reason"] for item in mapping)
+        ambiguous = reasons["ambiguous_metadata"] + reasons["multiple_source_ids_for_native_spectrum"]
+        examples = [{"spectrum_id": item["original_id"], "reason": item["reason"]}
+                    for item in mapping if item["native_id"] is None][:5]
+        result.loc[group.index, "spectrumID"] = [item["native_id"] or item["original_id"] for item in mapping]
+        audits.append({"run": str(run), "plugin_rows": len(group),
+                       "native_ms2_spectra": len(metadata), "matched_rows": matched,
+                       "converted_rows": converted, "unmatched_rows": len(group)-matched,
+                       "ambiguous_rows": ambiguous, "reason_counts": dict(reasons),
+                       "rt_tolerance_seconds": rt_tolerance_seconds, "mz_tolerance_ppm": mz_tolerance_ppm,
+                       "unmatched_examples": examples, "mapping": mapping})
+    return result, audits
 
 
 def check_xml_root(path, expected):

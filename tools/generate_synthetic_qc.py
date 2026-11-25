@@ -10,6 +10,7 @@ import argparse
 import json
 from pathlib import Path
 import random
+import shutil
 
 import pandas as pd
 
@@ -245,6 +246,8 @@ def generate(destination):
     if destination.exists():
         raise FileExistsError(f"Refusing to overwrite existing output: {destination}")
     destination.mkdir(parents=True)
+    shutil.copytree(Path(__file__).resolve().parents[1] / "tests/fixtures/proteome_discoverer",
+                    destination / "proteome_discoverer")
     rng = random.Random(SEED)
     peptides = peptide_definitions(rng)
     diann = diann_fixture(peptides, rng, destination / "diann_2_2_0")

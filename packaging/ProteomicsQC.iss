@@ -1,5 +1,5 @@
 #ifndef PortableDir
-  #define PortableDir "..\dist\ProteomicsQC_0.5.0"
+  #define PortableDir "..\dist\ProteomicsQC_0.5.1"
 #endif
 #ifndef ReleaseDir
   #define ReleaseDir "..\dist"
@@ -8,7 +8,7 @@
 [Setup]
 AppId={{CC02B685-1FC6-4E47-9E6F-04CF7FCD388D}
 AppName=ProteomicsQC
-AppVersion=0.5.0
+AppVersion=0.5.1
 AppPublisher=ProteomicsQC GUI
 DefaultDirName={localappdata}\Programs\ProteomicsQC
 DefaultGroupName=ProteomicsQC
@@ -17,7 +17,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
 OutputDir={#ReleaseDir}
-OutputBaseFilename=ProteomicsQC_Setup_0.5.0
+OutputBaseFilename=ProteomicsQC_Setup_0.5.1
 Compression=lzma2/fast
 SolidCompression=yes
 WizardStyle=modern

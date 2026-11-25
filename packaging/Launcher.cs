@@ -8,9 +8,9 @@ using System.Windows.Forms;
 
 [assembly: AssemblyTitle("ProteomicsQC")]
 [assembly: AssemblyProduct("ProteomicsQC")]
-[assembly: AssemblyVersion("0.5.0.0")]
-[assembly: AssemblyFileVersion("0.5.0.0")]
-[assembly: AssemblyInformationalVersion("0.5.0")]
+[assembly: AssemblyVersion("0.5.1.0")]
+[assembly: AssemblyFileVersion("0.5.1.0")]
+[assembly: AssemblyInformationalVersion("0.5.1")]
 
 class Launcher {
     static string Quote(string text) {

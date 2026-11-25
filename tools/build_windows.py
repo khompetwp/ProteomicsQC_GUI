@@ -18,7 +18,7 @@ from proteomicsqc import __version__ as VERSION
 
 
 def copy_manual(application):
-    manual = ROOT / "output" / "pdf" / "ProteomicsQC_User_Manual_TH_0.4.0.pdf"
+    manual = ROOT / "docs" / "ProteomicsQC_User_Manual_TH_0.5.0.pdf"
     if manual.is_file():
         destination = application / "docs"
         destination.mkdir(exist_ok=True)

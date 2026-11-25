@@ -16,6 +16,7 @@ from .adapters import SOURCES, LEVELS as SOURCE_LEVELS
 from .outputs import create_run_directory, validate_report_name
 from .preferences import load_settings, save_settings
 from .preflight import check_input
+from .help_docs import find_manual
 
 LEVELS = SOURCE_LEVELS["FragPipe"]
 
@@ -515,23 +516,26 @@ class MSQCApp(tk.Tk):
     def show_help(self):
         window = tk.Toplevel(self)
         window.title("Help / About - ProteomicsQC")
-        window.geometry("650x430")
         window.transient(self)
         frame = ttk.Frame(window, padding=22)
         frame.pack(fill="both", expand=True)
-        ttk.Label(frame, text=f"ProteomicsQC {__version__}", style="Result.TLabel").pack(anchor="w", pady=(0, 14))
-        text = "1. Select Data source, input file/folder and Data level.\n2. Choose Output folder and a new Report folder name.\n3. HTML is enabled by default; uncheck for Excel only.\n4. Run QC, then open Excel, HTML or the results folder.\n\nExcel retains all input rows; PMultiQC has its own metric rules.\nProcessing complete does not mean scientific PASS/FAIL.\n\nSettings: " + str(__import__('proteomicsqc.preferences', fromlist=['settings_file']).settings_file())
-        ttk.Label(frame, text=text, wraplength=590, justify="left").pack(anchor="w", fill="x")
-        ttk.Button(frame, text="Open PDF manual", command=self.open_manual).pack(anchor="w", pady=15)
-        ttk.Button(frame, text="Close", command=window.destroy).pack(anchor="e")
+        ttk.Label(frame, text="วิธีใช้งาน", style="Result.TLabel").pack(anchor="w", pady=(0, 8))
+        steps = (
+            "เลือก Data source และ Data level แล้วเลือกไฟล์หรือโฟลเดอร์ข้อมูล",
+            "เลือก Output folder สำหรับบันทึกผล และตั้งชื่อรายงานได้ตามต้องการ",
+            "หากต้องการทั้ง Excel และ HTML ให้ติ๊ก Create PMultiQC HTML report",
+            "กด Run QC แล้วเปิดดูผลเมื่อโปรแกรมทำงานเสร็จ",
+        )
+        for number, step in enumerate(steps, start=1):
+            ttk.Label(frame, text=f"{number}. {step}", wraplength=540, justify="left").pack(anchor="w", pady=3)
+        ttk.Button(frame, text="เปิดคู่มือภาษาไทย (PDF)", command=self.open_manual).pack(anchor="w", pady=(14, 0))
 
     def open_manual(self):
         root = Path(__file__).resolve().parents[1]
-        candidates = (root / "docs" / "ProteomicsQC_User_Manual_TH_0.4.0.pdf", root / "output" / "pdf" / "ProteomicsQC_User_Manual_TH_0.4.0.pdf")
-        for path in candidates:
-            if path.is_file():
-                webbrowser.open(path.as_uri())
-                return
+        path = find_manual(root, __version__)
+        if path:
+            webbrowser.open(path.as_uri())
+            return
         messagebox.showinfo("PDF manual", "The PDF manual is not present in this source copy. Download it from the GitHub release.")
 
     def open_results(self):

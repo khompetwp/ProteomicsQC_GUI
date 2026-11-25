@@ -51,6 +51,9 @@ def run_pmultiqc(source, files, outdir, excluded, data_source, info, check_cance
                "-o", str(outdir), "--filename", "multiqc_report.html", "--no-version-check", "--cl-config", json.dumps(config)]
     if data_source == discoverer.SOURCE:
         selected = discoverer.report_inputs(files)
+        pairs = discoverer.spectrum_pairs(files)
+        if len({p.suffix.lower() == ".mzml" for p in pairs.values()}) > 1:
+            raise ValueError("Run mzML and MGF pairs separately; PMultiQC does not combine these readers in one report.")
         # Do not pre-create _support: MultiQC would suffix both data/report names.
         file_list = outdir / "selected_inputs.txt"
         file_list.write_text("\n".join(str(path) for path in selected) + "\n", encoding="utf-8")
@@ -82,6 +85,13 @@ def run_pmultiqc(source, files, outdir, excluded, data_source, info, check_cance
         environment = {**os.environ, "PYTHONIOENCODING": "utf-8", "TEMP": scratch, "TMP": scratch, "TMPDIR": scratch}
         # Pass exact PSM paths separately from optional folder-wide supporting files.
         environment.pop("PROTEOMICSQC_PSM_INPUTS", None)
+        environment.pop("PROTEOMICSQC_PD_PAIRS", None)
+        environment.pop("PROTEOMICSQC_PD_AUDIT", None)
+        if data_source == discoverer.SOURCE:
+            environment["PROTEOMICSQC_PD_PAIRS"] = json.dumps([
+                {"mzid": str(path.resolve()), "spectrum": str(spectrum.resolve())}
+                for path, spectrum in pairs.items()])
+            environment["PROTEOMICSQC_PD_AUDIT"] = str(outdir / "pd_id_matching.json")
         if data_source == "FragPipe":
             environment["PROTEOMICSQC_PSM_INPUTS"] = json.dumps([str(path.resolve()) for path in files])
             info["pmultiqc_selected_psm_files"] = " | ".join(str(path) for path in files)
@@ -118,6 +128,21 @@ def run_pmultiqc(source, files, outdir, excluded, data_source, info, check_cance
             finally:
                 reader.join(timeout=5)
     info["pmultiqc_exit_code"] = code
+    if data_source == discoverer.SOURCE:
+        audit = outdir / "pd_id_matching.json"
+        if audit.is_file():
+            details = json.loads(audit.read_text(encoding="utf-8"))
+            info["pd_id_matching_status"] = details["status"]
+            for metric in ("plugin_rows", "native_ms2_spectra", "matched_rows", "converted_rows", "unmatched_rows"):
+                info["pd_id_" + metric] = sum(run[metric] for run in details["runs"]) if details["runs"] else None
+            support = outdir / "_support"
+            support.mkdir(exist_ok=True)
+            audit.replace(support / audit.name)
+            info["pd_id_matching_audit"] = str(support / audit.name)
+            if details["status"] != "complete":
+                raise RuntimeError("PD ID matching failed: " + details.get("error", "incomplete matching") + " Excel QC is retained.")
+        else:
+            raise RuntimeError("PD ID matching audit was not produced. Check processing.log; Excel QC is retained.")
     if code:
         raise RuntimeError(f"PMultiQC failed (exit {code}). Excel QC is retained.")
     # These are auxiliary exports, not files the HTML needs at its top level.

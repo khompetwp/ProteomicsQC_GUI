@@ -15,11 +15,12 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from proteomicsqc import __version__ as VERSION
+from proteomicsqc.help_docs import find_manual
 
 
 def run(portable, fragpipe=None):
     launcher = portable / "ProteomicsQC.exe"
-    assert (portable / "_internal" / "app" / "docs" / "ProteomicsQC_User_Manual_TH_0.4.0.pdf").is_file(), "Bundled manual missing"
+    assert find_manual(portable / "_internal" / "app", VERSION) is not None, "Bundled compatible manual missing"
     output_root = ROOT / "build" / "portable_validation"
     output_root.mkdir(parents=True, exist_ok=True)
     output = Path(tempfile.mkdtemp(prefix="portable_validation_", dir=output_root))
@@ -123,4 +124,3 @@ if __name__ == "__main__":
     parser.add_argument("--fragpipe", type=Path)
     args = parser.parse_args()
     run(args.portable.resolve(), args.fragpipe.resolve() if args.fragpipe else None)
-

@@ -4,7 +4,7 @@ ProteomicsQC is distributed under the GNU General Public License version 3 only 
 
 The corresponding source for each binary release is available from:
 
-https://github.com/khompetsh2-cloud/ProteomicsQC_GUI/releases
+https://github.com/khompetwp/ProteomicsQC_GUI/releases
 
 Use the source archive attached to the release whose version matches the installer or portable package. The archive contains the application source, build and packaging scripts, dependency declarations, tests and documentation required to understand and rebuild ProteomicsQC.
 

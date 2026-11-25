@@ -2,7 +2,7 @@
 
 โปรแกรม QC บน Windows สำหรับสรุปตารางผลจาก **FragPipe, DIA-NN, MaxQuant และ Proteome Discoverer** เป็น Excel และเลือกสร้างรายงาน HTML ด้วย PMultiQC ได้
 
-เวอร์ชัน `0.5.0` รองรับ Windows 10/11 x64 โปรแกรมอ่านผลวิเคราะห์ที่มีอยู่แล้วและ **ไม่ได้ค้นหา peptide/protein จาก RAW data เอง**
+เวอร์ชัน `0.5.1` รองรับ Windows 10/11 x64 โปรแกรมอ่านผลวิเคราะห์ที่มีอยู่แล้วและ **ไม่ได้ค้นหา peptide/protein จาก RAW data เอง**
 
 ## รองรับข้อมูลอะไรบ้าง
 
